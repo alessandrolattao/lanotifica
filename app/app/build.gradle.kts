@@ -8,6 +8,18 @@ android {
     namespace = "com.alessandrolattao.lanotifica"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("lanotifica-release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: "lanotifica"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.alessandrolattao.lanotifica"
         minSdk = 34
@@ -26,6 +38,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
