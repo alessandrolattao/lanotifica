@@ -9,13 +9,19 @@ import (
 	"github.com/alessandrolattao/lanotifica/internal/notification"
 )
 
-// Notification handles POST requests to send notifications.
+// Notification handles POST requests to send notifications and DELETE to dismiss.
 func Notification(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	switch r.Method {
+	case http.MethodPost:
+		handleNotificationPost(w, r)
+	case http.MethodDelete:
+		handleNotificationDelete(w, r)
+	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
 	}
+}
 
+func handleNotificationPost(w http.ResponseWriter, r *http.Request) {
 	var req notification.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -39,13 +45,7 @@ func Notification(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DismissNotification handles DELETE requests to dismiss notifications.
-func DismissNotification(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func handleNotificationDelete(w http.ResponseWriter, r *http.Request) {
 	var req notification.DismissRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)

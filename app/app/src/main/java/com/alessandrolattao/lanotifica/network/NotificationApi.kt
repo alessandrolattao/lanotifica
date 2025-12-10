@@ -25,6 +25,6 @@ interface NotificationApi {
     @POST("/notification")
     suspend fun sendNotification(@Body request: NotificationRequest): Response<NotificationResponse>
 
-    @HTTP(method = "DELETE", path = "/notification/dismiss", hasBody = true)
+    @HTTP(method = "DELETE", path = "/notification", hasBody = true)
     suspend fun dismissNotification(@Body request: DismissRequest): Response<NotificationResponse>
 }

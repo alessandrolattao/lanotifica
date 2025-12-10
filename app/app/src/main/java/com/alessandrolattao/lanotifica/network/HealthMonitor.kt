@@ -2,7 +2,6 @@ package com.alessandrolattao.lanotifica.network
 
 import android.content.Context
 import android.util.Log
-import com.alessandrolattao.lanotifica.data.SettingsRepository
 import com.alessandrolattao.lanotifica.util.CryptoUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +45,7 @@ class HealthMonitor private constructor(private val context: Context) {
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val settingsRepository = SettingsRepository(context)
+    private val settingsRepository by lazy { com.alessandrolattao.lanotifica.di.AppModule.settingsRepository }
     private val serviceDiscovery = ServiceDiscovery(context)
     private val discoveryMutex = Mutex()
 
