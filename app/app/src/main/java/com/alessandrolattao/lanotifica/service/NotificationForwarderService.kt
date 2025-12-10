@@ -12,9 +12,8 @@ import androidx.core.app.NotificationCompat
 import com.alessandrolattao.lanotifica.LaNotificaApp
 import com.alessandrolattao.lanotifica.MainActivity
 import com.alessandrolattao.lanotifica.R
-import com.alessandrolattao.lanotifica.data.SettingsRepository
+import com.alessandrolattao.lanotifica.di.AppModule
 import com.alessandrolattao.lanotifica.network.ApiClient
-import com.alessandrolattao.lanotifica.network.HealthMonitor
 import com.alessandrolattao.lanotifica.network.NotificationRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,13 +30,11 @@ class NotificationForwarderService : NotificationListenerService() {
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private lateinit var settingsRepository: SettingsRepository
-    private lateinit var healthMonitor: HealthMonitor
+    private val settingsRepository by lazy { AppModule.settingsRepository }
+    private val healthMonitor by lazy { AppModule.healthMonitor }
 
     override fun onCreate() {
         super.onCreate()
-        settingsRepository = SettingsRepository(this)
-        healthMonitor = HealthMonitor.getInstance(this)
         Log.d(TAG, "Service created")
     }
 
@@ -127,14 +124,9 @@ class NotificationForwarderService : NotificationListenerService() {
                         Log.d(TAG, "Notification forwarded successfully")
                     } else {
                         Log.e(TAG, "Failed to forward notification: ${response.code()}")
-                        // Force health check to rediscover if needed
-                        if (response.code() >= 500) {
-                            healthMonitor.forceCheck()
-                        }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Connection error, triggering health check", e)
-                    healthMonitor.forceCheck()
+                    Log.e(TAG, "Connection error: ${e.message}")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error forwarding notification", e)
