@@ -1,0 +1,28 @@
+root = "."
+tmp_dir = "/tmp/la-notify-air"
+
+[build]
+  cmd = "go build -o /tmp/la-notify-air/la-notify ./cmd/la-notify"
+  bin = "/tmp/la-notify-air/la-notify"
+  delay = 1000
+  exclude_dir = ["vendor", "bin"]
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  include_ext = ["go"]
+  kill_delay = "2s"
+  log = "/tmp/la-notify-air/build-errors.log"
+  send_interrupt = true
+  stop_on_error = true
+
+[log]
+  time = false
+
+[color]
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[misc]
+  clean_on_exit = true
