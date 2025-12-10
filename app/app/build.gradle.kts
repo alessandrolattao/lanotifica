@@ -105,6 +105,8 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     implementation(libs.datastore.preferences)
+    implementation(libs.security.crypto)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
@@ -113,6 +115,7 @@ dependencies {
     implementation(libs.mlkit.barcode)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
