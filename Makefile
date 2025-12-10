@@ -1,9 +1,6 @@
-.PHONY: build test up down clean lint
+.PHONY: test up down lint
 
 SERVER_DIR = server
-
-build:
-	cd $(SERVER_DIR) && go build -o ../bin/la-notify ./cmd/la-notify
 
 test:
 	cd $(SERVER_DIR) && go test -v ./...
@@ -16,6 +13,3 @@ up:
 
 down:
 	@pkill -f la-notify || echo "Server not running"
-
-clean: down
-	rm -rf bin
