@@ -3,10 +3,12 @@ package com.alessandrolattao.lanotifica.network
 import android.content.Context
 import android.util.Log
 import com.alessandrolattao.lanotifica.data.SettingsRepository
+import com.alessandrolattao.lanotifica.util.CryptoUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,13 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.security.cert.X509Certificate
-import java.util.concurrent.TimeUnit
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 /**
  * Monitors server health and manages server URL discovery.
@@ -31,7 +27,7 @@ class HealthMonitor private constructor(private val context: Context) {
 
     companion object {
         private const val TAG = "HealthMonitor"
-        private const val HEALTH_CHECK_INTERVAL_MS = 30_000L // 30 seconds
+        private const val HEALTH_CHECK_INTERVAL_MS = 120_000L // 2 minutes
         private const val HEALTH_CHECK_TIMEOUT_MS = 5_000L
 
         @Volatile
@@ -94,10 +90,14 @@ class HealthMonitor private constructor(private val context: Context) {
     }
 
     /**
-     * Forces a health check and rediscovery if needed.
+     * Destroys the HealthMonitor instance and releases all resources.
+     * Should be called when the app is terminated.
      */
-    suspend fun forceCheck() {
-        checkHealth()
+    fun destroy() {
+        Log.d(TAG, "Destroying HealthMonitor")
+        stopMonitoring()
+        scope.cancel()
+        instance = null
     }
 
     /**
@@ -158,7 +158,11 @@ class HealthMonitor private constructor(private val context: Context) {
 
     private fun performHealthCheck(url: String, fingerprint: String): Boolean {
         return try {
-            val client = createHttpClient(fingerprint)
+            val client = CryptoUtils.createPinnedOkHttpClient(
+                fingerprint = fingerprint,
+                connectTimeoutMs = HEALTH_CHECK_TIMEOUT_MS,
+                readTimeoutMs = HEALTH_CHECK_TIMEOUT_MS
+            )
             val request = Request.Builder()
                 .url("$url/health")
                 .get()
@@ -178,34 +182,5 @@ class HealthMonitor private constructor(private val context: Context) {
             Log.w(TAG, "Health check error for $url: ${e.message}")
             false
         }
-    }
-
-    @Suppress("CustomX509TrustManager", "TrustAllX509TrustManager")
-    private fun createHttpClient(expectedFingerprint: String): OkHttpClient {
-        val trustManager = object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-
-            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                if (chain.isNullOrEmpty()) {
-                    throw IllegalStateException("No certificate")
-                }
-                val serverFingerprint = com.alessandrolattao.lanotifica.util.CryptoUtils.calculateFingerprint(chain[0])
-                if (!com.alessandrolattao.lanotifica.util.CryptoUtils.fingerprintsMatch(serverFingerprint, expectedFingerprint)) {
-                    throw IllegalStateException("Fingerprint mismatch")
-                }
-            }
-
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        }
-
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, arrayOf<TrustManager>(trustManager), null)
-
-        return OkHttpClient.Builder()
-            .sslSocketFactory(sslContext.socketFactory, trustManager)
-            .hostnameVerifier { _, _ -> true }
-            .connectTimeout(HEALTH_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .readTimeout(HEALTH_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .build()
     }
 }
