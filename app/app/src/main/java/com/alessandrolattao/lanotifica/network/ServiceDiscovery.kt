@@ -50,7 +50,8 @@ class ServiceDiscovery(context: Context) {
                 } catch (e: Exception) {
                     Log.w(TAG, "Error during cleanup: ${e.message}")
                 }
-                executor.shutdown()
+                // Don't shutdown executor here - NsdManager may still be delivering callbacks
+                // The executor will be garbage collected when no longer referenced
             }
 
             discoveryListener =
