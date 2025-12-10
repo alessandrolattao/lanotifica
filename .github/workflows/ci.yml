@@ -18,13 +18,16 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.25'
 
       - name: Run tests
         run: make test-server
 
       - name: Run linter
-        run: make lint-server
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: server
 
   test-android:
     name: Test Android
@@ -55,7 +58,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.25'
 
       - name: Build binary
         run: make build
