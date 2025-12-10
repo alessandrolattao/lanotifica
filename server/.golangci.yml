@@ -1,0 +1,165 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    # Default (già abilitati ma li esplicito)
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    # Bugs & Error handling
+    - bodyclose
+    - contextcheck
+    - durationcheck
+    - nilerr
+    - nilnil
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - err113
+
+    # Complexity
+    - cyclop
+    - funlen
+    - gocognit
+    - gocyclo
+    - maintidx
+    - nestif
+
+    # Performance
+    - prealloc
+    - perfsprint
+
+    # Style & Code quality
+    - asciicheck
+    - bidichk
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - errname
+    - errorlint
+    - forcetypeassert
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - goprintffuncname
+    - grouper
+    - importas
+    - misspell
+    - nakedret
+    - nolintlint
+    - predeclared
+    - reassign
+    - revive
+    - unconvert
+    - unparam
+    - whitespace
+
+    # Imports & Modules
+    - gocheckcompilerdirectives
+    - gomoddirectives
+
+    # Testing
+    - paralleltest
+    - testableexamples
+
+    # Security
+    - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+linters-settings:
+  cyclop:
+    max-complexity: 12
+
+  funlen:
+    lines: 100
+    statements: 60
+
+  gocognit:
+    min-complexity: 20
+
+  gocyclo:
+    min-complexity: 15
+
+  maintidx:
+    under: 20
+
+  govet:
+    enable-all: true
+
+  nestif:
+    min-complexity: 5
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: cognitive-complexity
+        arguments: [15]
+      - name: argument-limit
+        arguments: [6]
+      - name: function-result-limit
+        arguments: [3]
+
+  gosec:
+    excludes:
+      - G104
+
+  godox:
+    keywords:
+      - TODO
+      - FIXME
+      - BUG
+      - HACK
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - dupl
+        - gosec
+        - err113
+        - forcetypeassert
+        - paralleltest
