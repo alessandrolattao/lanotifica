@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,7 +95,7 @@ class HealthMonitor private constructor(private val context: Context) {
     fun destroy() {
         Log.d(TAG, "Destroying HealthMonitor")
         stopMonitoring()
-        scope.cancel()
+        scope.coroutineContext[Job]?.cancel()
         instance = null
     }
 

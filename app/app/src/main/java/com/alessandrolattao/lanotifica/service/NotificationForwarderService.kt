@@ -14,6 +14,7 @@ import com.alessandrolattao.lanotifica.MainActivity
 import com.alessandrolattao.lanotifica.R
 import com.alessandrolattao.lanotifica.di.AppModule
 import com.alessandrolattao.lanotifica.network.ApiClient
+import com.alessandrolattao.lanotifica.network.DismissRequest
 import com.alessandrolattao.lanotifica.network.NotificationRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -110,6 +111,7 @@ class NotificationForwarderService : NotificationListenerService() {
                 Log.d(TAG, "Forwarding notification from $appName: $title - $text")
 
                 val request = NotificationRequest(
+                    key = sbn.key,
                     app_name = appName,
                     package_name = sbn.packageName,
                     title = title,
@@ -130,6 +132,44 @@ class NotificationForwarderService : NotificationListenerService() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error forwarding notification", e)
+            }
+        }
+    }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        sbn ?: return
+
+        if (sbn.packageName == packageName) return
+
+        serviceScope.launch {
+            try {
+                val enabled = settingsRepository.serviceEnabled.first()
+                if (!enabled) return@launch
+
+                val authToken = settingsRepository.authToken.first()
+                if (authToken.isBlank()) return@launch
+
+                val certFingerprint = settingsRepository.certFingerprint.first()
+                if (certFingerprint.isBlank()) return@launch
+
+                val serverUrl = healthMonitor.getServerUrlIfConnected() ?: return@launch
+
+                Log.d(TAG, "Dismissing notification: ${sbn.key}")
+
+                try {
+                    val api = ApiClient.getApi(serverUrl, authToken, certFingerprint)
+                    val response = api.dismissNotification(DismissRequest(key = sbn.key))
+
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Notification dismissed successfully")
+                    } else {
+                        Log.e(TAG, "Failed to dismiss notification: ${response.code()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Connection error dismissing notification: ${e.message}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error dismissing notification", e)
             }
         }
     }

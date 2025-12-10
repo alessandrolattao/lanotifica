@@ -27,7 +27,7 @@ func Notification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := notification.Send(req); err != nil {
+	if err := notification.Send(&req); err != nil {
 		log.Printf("Failed to send notification: %v", err)
 		http.Error(w, "Failed to send notification", http.StatusInternalServerError)
 		return
@@ -35,6 +35,36 @@ func Notification(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(map[string]string{"status": "sent"}); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+}
+
+// DismissNotification handles DELETE requests to dismiss notifications.
+func DismissNotification(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req notification.DismissRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Key == "" {
+		http.Error(w, "Key is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := notification.Dismiss(req.Key); err != nil {
+		log.Printf("Failed to dismiss notification: %v", err)
+		http.Error(w, "Failed to dismiss notification", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "dismissed"}); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 }

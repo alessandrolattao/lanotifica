@@ -44,6 +44,7 @@ func main() {
 	mux.HandleFunc("/favicon.png", handler.FaviconHandler())
 	mux.HandleFunc("/health", handler.Health)
 	mux.HandleFunc("/notification", handler.AuthMiddleware(cfg.Secret, handler.Notification))
+	mux.HandleFunc("/notification/dismiss", handler.AuthMiddleware(cfg.Secret, handler.DismissNotification))
 
 	server := &http.Server{
 		Addr:              cfg.Port,
