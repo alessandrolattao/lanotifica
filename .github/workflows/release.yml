@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        run: make build
+
+      - name: Build RPM
+        run: make rpm VERSION=${{ steps.version.outputs.VERSION }}
+
+      - name: Build DEB
+        run: make deb VERSION=${{ steps.version.outputs.VERSION }}
+
+      - name: Copy RPM to dist
+        run: cp ~/rpmbuild/RPMS/x86_64/*.rpm dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
