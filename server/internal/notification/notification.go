@@ -30,7 +30,7 @@ func Send(req Request) error {
 		ntf.AppName = req.AppName
 	}
 	ntf.AppIcon = "preferences-system-notifications"
-	ntf.Hints = make(map[string]interface{})
+	ntf.Hints = make(map[string]any)
 
 	if iconPath := iconCache.GetIconPath(req.PackageName); iconPath != "" {
 		ntf.Hints[notify.HintImagePath] = "file://" + iconPath
