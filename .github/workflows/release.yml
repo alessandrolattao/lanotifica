@@ -37,19 +37,14 @@ jobs:
           go-version: '1.21'
 
       - name: Run tests
-        run: go test -v ./...
+        run: make test-server
 
       - name: Run linter
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
+        run: make lint-server
 
   test-android:
     name: Test Android
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
     steps:
       - uses: actions/checkout@v4
 
@@ -60,14 +55,11 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
       - name: Run lint
-        run: ./gradlew lint --no-daemon
+        run: make lint-app
 
       - name: Run unit tests
-        run: ./gradlew test --no-daemon
+        run: make test-app
 
   # ============================================
   # BUILD JOBS
@@ -97,17 +89,12 @@ jobs:
             echo "VERSION=0.0.0-dev" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build binary
-        run: make build
-
-      - name: Build RPM
-        run: make rpm VERSION=${{ steps.version.outputs.VERSION }}
-
-      - name: Build DEB
-        run: make deb VERSION=${{ steps.version.outputs.VERSION }}
-
-      - name: Copy RPM to dist
-        run: cp ~/rpmbuild/RPMS/x86_64/*.rpm dist/
+      - name: Build packages
+        run: |
+          make build
+          make rpm VERSION=${{ steps.version.outputs.VERSION }}
+          make deb VERSION=${{ steps.version.outputs.VERSION }}
+          cp ~/rpmbuild/RPMS/x86_64/*.rpm dist/
 
       - name: Upload server artifacts
         uses: actions/upload-artifact@v4
@@ -147,19 +134,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release AAB
+      - name: Build Release AAB and APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon
-
-      - name: Build Release APK
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
 
       - name: Rename artifacts
         run: |
