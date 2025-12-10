@@ -1,4 +1,4 @@
-.PHONY: help build test test-server test-app up lint lint-server lint-app rpm deb clean
+.PHONY: help build test test-server test-app up lint lint-server lint-app format format-server format-app rpm deb clean
 
 SERVER_DIR = server
 APP_DIR = app
@@ -31,6 +31,14 @@ lint-server: ## Run server linter
 
 lint-app: ## Run Android app linter
 	cd $(APP_DIR) && ./gradlew lint
+
+format: format-server format-app ## Format all code
+
+format-server: ## Format Go code
+	cd $(SERVER_DIR) && go fmt ./...
+
+format-app: ## Format Kotlin code
+	cd $(APP_DIR) && ./gradlew spotlessApply
 
 up: ## Start dev server with hot reload
 	cd $(SERVER_DIR) && air

@@ -70,9 +70,7 @@ import com.alessandrolattao.lanotifica.util.QrCodeParser
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(
-    viewModel: MainScreenViewModel = viewModel(factory = MainScreenViewModel.Factory)
-) {
+fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenViewModel.Factory)) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -87,14 +85,14 @@ fun MainScreen(
     var showQrScanner by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        viewModel.setCameraPermission(isGranted)
-        if (isGranted) {
-            showQrScanner = true
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted
+            ->
+            viewModel.setCameraPermission(isGranted)
+            if (isGranted) {
+                showQrScanner = true
+            }
         }
-    }
 
     // Check permissions when app resumes (lifecycle-aware, no polling!)
     DisposableEffect(lifecycleOwner) {
@@ -102,7 +100,7 @@ fun MainScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.updatePermissions(
                     notificationAccess = isNotificationServiceEnabled(context),
-                    batteryOptDisabled = isBatteryOptimizationDisabled(context)
+                    batteryOptDisabled = isBatteryOptimizationDisabled(context),
                 )
             }
         }
@@ -119,7 +117,7 @@ fun MainScreen(
                 }
                 showQrScanner = false
             },
-            onClose = { showQrScanner = false }
+            onClose = { showQrScanner = false },
         )
         return
     }
@@ -130,12 +128,12 @@ fun MainScreen(
             title = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Image(
                         painter = painterResource(R.drawable.app_logo),
                         contentDescription = "LaNotifica",
-                        modifier = Modifier.size(240.dp)
+                        modifier = Modifier.size(240.dp),
                     )
                     Spacer(modifier = Modifier.size(12.dp))
                     Text("LaNotifica")
@@ -144,22 +142,20 @@ fun MainScreen(
             text = {
                 Text(
                     "Forward notifications from your Android device to your Linux desktop.\n\n" +
-                    "To get started, you need to install and run the LaNotifica server on your computer."
+                        "To get started, you need to install and run the LaNotifica server on your computer."
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showAboutDialog = false
-                    openGitHub(context)
-                }) {
+                TextButton(
+                    onClick = {
+                        showAboutDialog = false
+                        openGitHub(context)
+                    }
+                ) {
                     Text("Setup Instructions")
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showAboutDialog = false }) {
-                    Text("Close")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showAboutDialog = false }) { Text("Close") } },
         )
     }
 
@@ -181,14 +177,11 @@ fun MainScreen(
             }
         },
         onServiceEnabledChange = { viewModel.setServiceEnabled(it) },
-        onAboutClick = { showAboutDialog = true }
+        onAboutClick = { showAboutDialog = true },
     )
 }
 
-/**
- * Stateless content composable for MainScreen.
- * Extracted for testability.
- */
+/** Stateless content composable for MainScreen. Extracted for testability. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreenContent(
@@ -203,7 +196,7 @@ fun MainScreenContent(
     onBatteryOptimizationClick: () -> Unit,
     onServerConfigClick: () -> Unit,
     onServiceEnabledChange: (Boolean) -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -211,81 +204,78 @@ fun MainScreenContent(
                 title = { Text("LaNotifica") },
                 actions = {
                     IconButton(onClick = onAboutClick) {
-                        Icon(
-                            Icons.Outlined.HelpOutline,
-                            contentDescription = "About"
-                        )
+                        Icon(Icons.Outlined.HelpOutline, contentDescription = "About")
                     }
-                }
+                },
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Setup section
             SectionHeader("Setup")
 
             // Notification Access
             SettingRow(
-                icon = if (hasNotificationAccess) Icons.Default.Notifications else Icons.Default.NotificationsOff,
+                icon =
+                    if (hasNotificationAccess) Icons.Default.Notifications
+                    else Icons.Default.NotificationsOff,
                 title = "Notification Access",
                 subtitle = if (hasNotificationAccess) "Granted" else "Tap to grant",
                 isOk = hasNotificationAccess,
-                onClick = onNotificationAccessClick
+                onClick = onNotificationAccessClick,
             )
 
             // Battery Optimization
             SettingRow(
-                icon = if (isBatteryOptimizationDisabled) Icons.Default.BatterySaver else Icons.Default.BatteryAlert,
+                icon =
+                    if (isBatteryOptimizationDisabled) Icons.Default.BatterySaver
+                    else Icons.Default.BatteryAlert,
                 title = "Battery Optimization",
                 subtitle = if (isBatteryOptimizationDisabled) "Unrestricted" else "Tap to disable",
                 isOk = isBatteryOptimizationDisabled,
-                onClick = onBatteryOptimizationClick
+                onClick = onBatteryOptimizationClick,
             )
 
             // QR Configuration
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onServerConfigClick
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), onClick = onServerConfigClick) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.QrCodeScanner,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Server Configuration",
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                         Text(
-                            text = if (isConfigured) "Tap to reconfigure" else "Tap to scan QR code",
+                            text =
+                                if (isConfigured) "Tap to reconfigure" else "Tap to scan QR code",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Icon(
-                        imageVector = if (isConfigured) Icons.Default.CheckCircle else Icons.Default.Error,
+                        imageVector =
+                            if (isConfigured) Icons.Default.CheckCircle else Icons.Default.Error,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = if (isConfigured)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.error
+                        tint =
+                            if (isConfigured) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -295,66 +285,69 @@ fun MainScreenContent(
 
             // Server Connection Status
             SettingRow(
-                icon = when (connectionState) {
-                    HealthMonitor.ConnectionState.CONNECTED -> Icons.Default.Cloud
-                    HealthMonitor.ConnectionState.CONNECTING -> Icons.Default.Sync
-                    HealthMonitor.ConnectionState.DISCONNECTED -> Icons.Default.CloudOff
-                },
+                icon =
+                    when (connectionState) {
+                        HealthMonitor.ConnectionState.CONNECTED -> Icons.Default.Cloud
+                        HealthMonitor.ConnectionState.CONNECTING -> Icons.Default.Sync
+                        HealthMonitor.ConnectionState.DISCONNECTED -> Icons.Default.CloudOff
+                    },
                 title = "Server Status",
-                subtitle = when {
-                    !isConfigured -> "Configure first"
-                    connectionState == HealthMonitor.ConnectionState.CONNECTED -> serverUrl ?: "Connected"
-                    connectionState == HealthMonitor.ConnectionState.CONNECTING -> "Discovering..."
-                    else -> "Not found"
-                },
+                subtitle =
+                    when {
+                        !isConfigured -> "Configure first"
+                        connectionState == HealthMonitor.ConnectionState.CONNECTED ->
+                            serverUrl ?: "Connected"
+                        connectionState == HealthMonitor.ConnectionState.CONNECTING ->
+                            "Discovering..."
+                        else -> "Not found"
+                    },
                 isOk = connectionState == HealthMonitor.ConnectionState.CONNECTED,
-                onClick = null
+                onClick = null,
             )
 
             // Forward Switch
-            val isForwardingActive = serviceEnabled && hasNotificationAccess && isConfigured &&
-                connectionState == HealthMonitor.ConnectionState.CONNECTED
+            val isForwardingActive =
+                serviceEnabled &&
+                    hasNotificationAccess &&
+                    isConfigured &&
+                    connectionState == HealthMonitor.ConnectionState.CONNECTED
 
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        imageVector = if (isForwardingActive) Icons.Default.CheckCircle else Icons.Default.Error,
+                        imageVector =
+                            if (isForwardingActive) Icons.Default.CheckCircle
+                            else Icons.Default.Error,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = if (isForwardingActive)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.error
+                        tint =
+                            if (isForwardingActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error,
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Forwarding", style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            text = "Forwarding",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = when {
-                                !hasNotificationAccess -> "Grant access first"
-                                !isConfigured -> "Configure first"
-                                !serviceEnabled -> "Disabled"
-                                connectionState != HealthMonitor.ConnectionState.CONNECTED -> "Waiting for server..."
-                                else -> "Active"
-                            },
+                            text =
+                                when {
+                                    !hasNotificationAccess -> "Grant access first"
+                                    !isConfigured -> "Configure first"
+                                    !serviceEnabled -> "Disabled"
+                                    connectionState != HealthMonitor.ConnectionState.CONNECTED ->
+                                        "Waiting for server..."
+                                    else -> "Active"
+                                },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Switch(
                         checked = serviceEnabled,
                         onCheckedChange = onServiceEnabledChange,
-                        enabled = hasNotificationAccess && isConfigured
+                        enabled = hasNotificationAccess && isConfigured,
                     )
                 }
             }
@@ -368,7 +361,7 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
     )
 }
 
@@ -379,44 +372,34 @@ private fun SettingRow(
     title: String,
     subtitle: String,
     isOk: Boolean,
-    onClick: (() -> Unit)?
+    onClick: (() -> Unit)?,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick ?: {}
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick ?: {}) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Text(text = title, style = MaterialTheme.typography.bodyLarge)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
                 imageVector = if (isOk) Icons.Default.CheckCircle else Icons.Default.Error,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (isOk)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.error
+                tint =
+                    if (isOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
             )
         }
     }
@@ -424,10 +407,7 @@ private fun SettingRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QrScannerScreen(
-    onQrCodeScanned: (String) -> Unit,
-    onClose: () -> Unit
-) {
+private fun QrScannerScreen(onQrCodeScanned: (String) -> Unit, onClose: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -436,29 +416,18 @@ private fun QrScannerScreen(
                     IconButton(onClick = onClose) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
-                }
+                },
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            QrScanner(
-                onQrCodeScanned = onQrCodeScanned,
-                modifier = Modifier.fillMaxSize()
-            )
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            QrScanner(onQrCodeScanned = onQrCodeScanned, modifier = Modifier.fillMaxSize())
 
-            Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(32.dp)
-            ) {
+            Card(modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp)) {
                 Text(
                     text = "Point camera at server QR code",
                     modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
@@ -466,11 +435,13 @@ private fun QrScannerScreen(
 }
 
 private fun isNotificationServiceEnabled(context: Context): Boolean {
-    val componentName = ComponentName(context, "com.alessandrolattao.lanotifica.service.NotificationForwarderService")
-    val enabledListeners = Settings.Secure.getString(
-        context.contentResolver,
-        "enabled_notification_listeners"
-    )
+    val componentName =
+        ComponentName(
+            context,
+            "com.alessandrolattao.lanotifica.service.NotificationForwarderService",
+        )
+    val enabledListeners =
+        Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
     return enabledListeners?.contains(componentName.flattenToString()) == true
 }
 
@@ -486,17 +457,19 @@ private fun isBatteryOptimizationDisabled(context: Context): Boolean {
 }
 
 private fun requestDisableBatteryOptimization(context: Context) {
-    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-        data = Uri.parse("package:${context.packageName}")
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-    }
+    val intent =
+        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
     context.startActivity(intent)
 }
 
 private fun openGitHub(context: Context) {
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        data = Uri.parse("https://github.com/alessandrolattao/lanotifica")
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-    }
+    val intent =
+        Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://github.com/alessandrolattao/lanotifica")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
     context.startActivity(intent)
 }

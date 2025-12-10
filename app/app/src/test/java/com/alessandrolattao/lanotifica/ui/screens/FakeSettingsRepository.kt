@@ -3,9 +3,7 @@ package com.alessandrolattao.lanotifica.ui.screens
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/**
- * Fake SettingsRepository for testing purposes.
- */
+/** Fake SettingsRepository for testing purposes. */
 class FakeSettingsRepository {
     private val _authToken = MutableStateFlow("")
     val authToken: Flow<String> = _authToken

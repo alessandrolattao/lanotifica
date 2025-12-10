@@ -43,10 +43,7 @@ class MainScreenViewModelTest {
     fun `updatePermissions updates notification access state`() = runTest {
         val viewModel = createTestViewModel()
 
-        viewModel.updatePermissions(
-            notificationAccess = true,
-            batteryOptDisabled = false
-        )
+        viewModel.updatePermissions(notificationAccess = true, batteryOptDisabled = false)
 
         assertTrue(viewModel.hasNotificationAccess.value)
         assertFalse(viewModel.isBatteryOptimizationDisabled.value)
@@ -56,10 +53,7 @@ class MainScreenViewModelTest {
     fun `updatePermissions updates battery optimization state`() = runTest {
         val viewModel = createTestViewModel()
 
-        viewModel.updatePermissions(
-            notificationAccess = false,
-            batteryOptDisabled = true
-        )
+        viewModel.updatePermissions(notificationAccess = false, batteryOptDisabled = true)
 
         assertFalse(viewModel.hasNotificationAccess.value)
         assertTrue(viewModel.isBatteryOptimizationDisabled.value)
@@ -69,10 +63,7 @@ class MainScreenViewModelTest {
     fun `updatePermissions updates both states`() = runTest {
         val viewModel = createTestViewModel()
 
-        viewModel.updatePermissions(
-            notificationAccess = true,
-            batteryOptDisabled = true
-        )
+        viewModel.updatePermissions(notificationAccess = true, batteryOptDisabled = true)
 
         assertTrue(viewModel.hasNotificationAccess.value)
         assertTrue(viewModel.isBatteryOptimizationDisabled.value)
@@ -85,7 +76,7 @@ class MainScreenViewModelTest {
         viewModel.updatePermissions(
             notificationAccess = true,
             batteryOptDisabled = true,
-            cameraPermission = true
+            cameraPermission = true,
         )
 
         assertTrue(viewModel.hasNotificationAccess.value)
@@ -114,10 +105,7 @@ class MainScreenViewModelTest {
         assertTrue(viewModel.hasCameraPermission.value)
 
         // updatePermissions without camera param should keep existing value
-        viewModel.updatePermissions(
-            notificationAccess = true,
-            batteryOptDisabled = false
-        )
+        viewModel.updatePermissions(notificationAccess = true, batteryOptDisabled = false)
 
         assertTrue(viewModel.hasCameraPermission.value)
     }
@@ -177,14 +165,15 @@ class MainScreenViewModelTest {
     private fun createTestViewModel(
         isConfigured: MutableStateFlow<Boolean> = MutableStateFlow(false),
         serviceEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false),
-        connectionState: MutableStateFlow<HealthMonitor.ConnectionState> = MutableStateFlow(HealthMonitor.ConnectionState.DISCONNECTED),
-        serverUrl: MutableStateFlow<String?> = MutableStateFlow(null)
+        connectionState: MutableStateFlow<HealthMonitor.ConnectionState> =
+            MutableStateFlow(HealthMonitor.ConnectionState.DISCONNECTED),
+        serverUrl: MutableStateFlow<String?> = MutableStateFlow(null),
     ): TestableMainScreenViewModel {
         return TestableMainScreenViewModel(
             isConfiguredFlow = isConfigured,
             serviceEnabledFlow = serviceEnabled,
             connectionStateFlow = connectionState,
-            serverUrlFlow = serverUrl
+            serverUrlFlow = serverUrl,
         )
     }
 }

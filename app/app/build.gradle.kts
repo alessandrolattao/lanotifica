@@ -36,7 +36,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("release")
         }
@@ -45,12 +45,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    buildFeatures {
-        compose = true
-    }
+    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true }
 
     lint {
         warningsAsErrors = true
@@ -59,31 +55,33 @@ android {
         checkDependencies = true
 
         // Strict rules for modern apps
-        enable += listOf(
-            "Interoperability",
-            "NewerVersionAvailable",
-            "ObsoleteSdkInt",
-            "Performance",
-            "Security",
-            "Usability",
-        )
+        enable +=
+            listOf(
+                "Interoperability",
+                "NewerVersionAvailable",
+                "ObsoleteSdkInt",
+                "Performance",
+                "Security",
+                "Usability",
+            )
 
         // Disable rules that conflict with our setup
-        disable += listOf(
-            "MissingTranslation",       // Single language app
-            "UnusedResources",          // False positives with Compose
-            "IconMissingDensityFolder", // Using vector drawables
-            "GradleDependency",         // We manage versions manually
-            "NewerVersionAvailable",    // We manage versions manually
-            "AndroidGradlePluginVersion", // We manage Gradle version manually
-            "OldTargetApi",             // We target the SDK we tested with
-            "BatteryLife",              // App needs battery optimization bypass
-            "LogConditional",           // Debug logs are useful for this app
-            "SyntheticAccessor",        // Minor performance, not critical
-            "UseKtx",                   // Style preference, not critical
-            "StaticFieldLeak",          // HealthMonitor uses applicationContext
-            "UnsafeOptInUsageError",    // Camera API experimental features are stable
-        )
+        disable +=
+            listOf(
+                "MissingTranslation", // Single language app
+                "UnusedResources", // False positives with Compose
+                "IconMissingDensityFolder", // Using vector drawables
+                "GradleDependency", // We manage versions manually
+                "NewerVersionAvailable", // We manage versions manually
+                "AndroidGradlePluginVersion", // We manage Gradle version manually
+                "OldTargetApi", // We target the SDK we tested with
+                "BatteryLife", // App needs battery optimization bypass
+                "LogConditional", // Debug logs are useful for this app
+                "SyntheticAccessor", // Minor performance, not critical
+                "UseKtx", // Style preference, not critical
+                "StaticFieldLeak", // HealthMonitor uses applicationContext
+                "UnsafeOptInUsageError", // Camera API experimental features are stable
+            )
     }
 }
 

@@ -1,17 +1,11 @@
 package com.alessandrolattao.lanotifica.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alessandrolattao.lanotifica.network.HealthMonitor
 import com.alessandrolattao.lanotifica.ui.theme.LaNotificaTheme
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,8 +13,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun mainScreen_displaysSetupSection() {
@@ -38,7 +31,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -65,7 +58,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -91,7 +84,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -115,7 +108,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -139,7 +132,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -163,7 +156,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }
@@ -187,7 +180,7 @@ class MainScreenTest {
                     onBatteryOptimizationClick = {},
                     onServerConfigClick = {},
                     onServiceEnabledChange = {},
-                    onAboutClick = {}
+                    onAboutClick = {},
                 )
             }
         }

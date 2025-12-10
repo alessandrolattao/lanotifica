@@ -15,14 +15,22 @@ import kotlinx.coroutines.launch
 
 class MainScreenViewModel(
     private val settingsRepository: SettingsRepository,
-    private val healthMonitor: HealthMonitor
+    private val healthMonitor: HealthMonitor,
 ) : ViewModel() {
 
-    val isConfigured = settingsRepository.isConfigured
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val isConfigured =
+        settingsRepository.isConfigured.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            false,
+        )
 
-    val serviceEnabled = settingsRepository.serviceEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val serviceEnabled =
+        settingsRepository.serviceEnabled.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            false,
+        )
 
     val connectionState: StateFlow<HealthMonitor.ConnectionState> = healthMonitor.connectionState
 
@@ -32,7 +40,8 @@ class MainScreenViewModel(
     val hasNotificationAccess: StateFlow<Boolean> = _hasNotificationAccess.asStateFlow()
 
     private val _isBatteryOptimizationDisabled = MutableStateFlow(false)
-    val isBatteryOptimizationDisabled: StateFlow<Boolean> = _isBatteryOptimizationDisabled.asStateFlow()
+    val isBatteryOptimizationDisabled: StateFlow<Boolean> =
+        _isBatteryOptimizationDisabled.asStateFlow()
 
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission: StateFlow<Boolean> = _hasCameraPermission.asStateFlow()
@@ -40,7 +49,7 @@ class MainScreenViewModel(
     fun updatePermissions(
         notificationAccess: Boolean,
         batteryOptDisabled: Boolean,
-        cameraPermission: Boolean = _hasCameraPermission.value
+        cameraPermission: Boolean = _hasCameraPermission.value,
     ) {
         _hasNotificationAccess.value = notificationAccess
         _isBatteryOptimizationDisabled.value = batteryOptDisabled
@@ -52,9 +61,7 @@ class MainScreenViewModel(
     }
 
     fun setServiceEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.setServiceEnabled(enabled)
-        }
+        viewModelScope.launch { settingsRepository.setServiceEnabled(enabled) }
     }
 
     fun setServerConfig(token: String, fingerprint: String) {
@@ -65,14 +72,16 @@ class MainScreenViewModel(
     }
 
     companion object {
-        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainScreenViewModel(
-                    settingsRepository = AppModule.settingsRepository,
-                    healthMonitor = AppModule.healthMonitor
-                ) as T
+        val Factory: ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return MainScreenViewModel(
+                        settingsRepository = AppModule.settingsRepository,
+                        healthMonitor = AppModule.healthMonitor,
+                    )
+                        as T
+                }
             }
-        }
     }
 }

@@ -18,8 +18,8 @@ import kotlinx.coroutines.sync.withLock
 import okhttp3.Request
 
 /**
- * Monitors server health and manages server URL discovery.
- * Provides connection status to the UI and notification service.
+ * Monitors server health and manages server URL discovery. Provides connection status to the UI and
+ * notification service.
  */
 class HealthMonitor private constructor(private val context: Context) {
 
@@ -28,24 +28,26 @@ class HealthMonitor private constructor(private val context: Context) {
         private const val HEALTH_CHECK_INTERVAL_MS = 120_000L // 2 minutes
         private const val HEALTH_CHECK_TIMEOUT_MS = 5_000L
 
-        @Volatile
-        private var instance: HealthMonitor? = null
+        @Volatile private var instance: HealthMonitor? = null
 
         fun getInstance(context: Context): HealthMonitor {
-            return instance ?: synchronized(this) {
-                instance ?: HealthMonitor(context.applicationContext).also { instance = it }
-            }
+            return instance
+                ?: synchronized(this) {
+                    instance ?: HealthMonitor(context.applicationContext).also { instance = it }
+                }
         }
     }
 
     enum class ConnectionState {
         DISCONNECTED,
         CONNECTING,
-        CONNECTED
+        CONNECTED,
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val settingsRepository by lazy { com.alessandrolattao.lanotifica.di.AppModule.settingsRepository }
+    private val settingsRepository by lazy {
+        com.alessandrolattao.lanotifica.di.AppModule.settingsRepository
+    }
     private val serviceDiscovery = ServiceDiscovery(context)
     private val discoveryMutex = Mutex()
 
@@ -57,28 +59,23 @@ class HealthMonitor private constructor(private val context: Context) {
 
     private var monitoringJob: Job? = null
 
-    @Volatile
-    private var currentFingerprint: String? = null
+    @Volatile private var currentFingerprint: String? = null
 
-    /**
-     * Starts monitoring server health.
-     * Should be called when service is enabled.
-     */
+    /** Starts monitoring server health. Should be called when service is enabled. */
     fun startMonitoring() {
         if (monitoringJob?.isActive == true) return
 
         Log.d(TAG, "Starting health monitoring")
-        monitoringJob = scope.launch {
-            while (true) {
-                checkHealth()
-                delay(HEALTH_CHECK_INTERVAL_MS)
+        monitoringJob =
+            scope.launch {
+                while (true) {
+                    checkHealth()
+                    delay(HEALTH_CHECK_INTERVAL_MS)
+                }
             }
-        }
     }
 
-    /**
-     * Stops monitoring server health.
-     */
+    /** Stops monitoring server health. */
     fun stopMonitoring() {
         Log.d(TAG, "Stopping health monitoring")
         monitoringJob?.cancel()
@@ -88,8 +85,8 @@ class HealthMonitor private constructor(private val context: Context) {
     }
 
     /**
-     * Destroys the HealthMonitor instance and releases all resources.
-     * Should be called when the app is terminated.
+     * Destroys the HealthMonitor instance and releases all resources. Should be called when the app
+     * is terminated.
      */
     fun destroy() {
         Log.d(TAG, "Destroying HealthMonitor")
@@ -98,10 +95,7 @@ class HealthMonitor private constructor(private val context: Context) {
         instance = null
     }
 
-    /**
-     * Forces an immediate health check.
-     * Should be called after server configuration is updated.
-     */
+    /** Forces an immediate health check. Should be called after server configuration is updated. */
     fun forceCheck() {
         scope.launch {
             Log.d(TAG, "Forcing immediate health check")
@@ -109,9 +103,7 @@ class HealthMonitor private constructor(private val context: Context) {
         }
     }
 
-    /**
-     * Returns the current server URL if connected, null otherwise.
-     */
+    /** Returns the current server URL if connected, null otherwise. */
     fun getServerUrlIfConnected(): String? {
         return if (_connectionState.value == ConnectionState.CONNECTED) {
             _serverUrl.value
@@ -131,7 +123,9 @@ class HealthMonitor private constructor(private val context: Context) {
         currentFingerprint = fingerprint
 
         // Try cached URL first
-        var url = _serverUrl.value ?: settingsRepository.cachedServerUrl.first().takeIf { it.isNotBlank() }
+        var url =
+            _serverUrl.value
+                ?: settingsRepository.cachedServerUrl.first().takeIf { it.isNotBlank() }
 
         if (url != null) {
             if (performHealthCheck(url, fingerprint)) {
@@ -167,15 +161,13 @@ class HealthMonitor private constructor(private val context: Context) {
 
     private fun performHealthCheck(url: String, fingerprint: String): Boolean {
         return try {
-            val client = CryptoUtils.createPinnedOkHttpClient(
-                fingerprint = fingerprint,
-                connectTimeoutMs = HEALTH_CHECK_TIMEOUT_MS,
-                readTimeoutMs = HEALTH_CHECK_TIMEOUT_MS
-            )
-            val request = Request.Builder()
-                .url("$url/health")
-                .get()
-                .build()
+            val client =
+                CryptoUtils.createPinnedOkHttpClient(
+                    fingerprint = fingerprint,
+                    connectTimeoutMs = HEALTH_CHECK_TIMEOUT_MS,
+                    readTimeoutMs = HEALTH_CHECK_TIMEOUT_MS,
+                )
+            val request = Request.Builder().url("$url/health").get().build()
 
             val response = client.newCall(request).execute()
             val success = response.isSuccessful

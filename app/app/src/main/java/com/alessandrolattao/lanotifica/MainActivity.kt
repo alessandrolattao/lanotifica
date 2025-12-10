@@ -15,11 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LaNotificaTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    MainScreen()
-                }
-            }
+            LaNotificaTheme { Surface(modifier = Modifier.fillMaxSize()) { MainScreen() } }
         }
     }
 }

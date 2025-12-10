@@ -50,5 +50,6 @@ security-crypto = { module = "androidx.security:security-crypto", version.ref = 
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+spotless = "com.diffplug.spotless:7.0.4"
 version-catalog-update = "nl.littlerobots.version-catalog-update:1.0.1"
 versions = "com.github.ben-manes.versions:0.53.0"

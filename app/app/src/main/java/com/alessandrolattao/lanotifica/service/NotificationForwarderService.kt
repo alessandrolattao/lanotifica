@@ -45,7 +45,7 @@ class NotificationForwarderService : NotificationListenerService() {
         startForeground(
             FOREGROUND_ID,
             createForegroundNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
         healthMonitor.startMonitoring()
     }
@@ -113,13 +113,14 @@ class NotificationForwarderService : NotificationListenerService() {
 
                 Log.d(TAG, "Forwarding notification from $appName: $title - $text")
 
-                val request = NotificationRequest(
-                    key = sbn.key,
-                    app_name = appName,
-                    package_name = sbn.packageName,
-                    title = title,
-                    message = text
-                )
+                val request =
+                    NotificationRequest(
+                        key = sbn.key,
+                        app_name = appName,
+                        package_name = sbn.packageName,
+                        title = title,
+                        message = text,
+                    )
 
                 try {
                     val api = ApiClient.getApi(serverUrl, authToken, certFingerprint)
@@ -188,12 +189,13 @@ class NotificationForwarderService : NotificationListenerService() {
     }
 
     private fun createForegroundNotification(): Notification {
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return NotificationCompat.Builder(this, LaNotificaApp.CHANNEL_ID)
             .setContentTitle("LaNotifica")

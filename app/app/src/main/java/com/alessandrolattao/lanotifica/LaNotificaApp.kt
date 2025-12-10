@@ -18,14 +18,16 @@ class LaNotificaApp : Application() {
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Notification Forwarder",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Shows when LaNotifica is forwarding notifications"
-            setShowBadge(false)
-        }
+        val channel =
+            NotificationChannel(
+                    CHANNEL_ID,
+                    "Notification Forwarder",
+                    NotificationManager.IMPORTANCE_LOW,
+                )
+                .apply {
+                    description = "Shows when LaNotifica is forwarding notifications"
+                    setShowBadge(false)
+                }
 
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)

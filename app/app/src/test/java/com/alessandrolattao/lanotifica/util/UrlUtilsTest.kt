@@ -32,7 +32,10 @@ class UrlUtilsTest {
 
     @Test
     fun `normalizeUrl handles mDNS hostname`() {
-        assertEquals("https://lanotifica.local:19420/", UrlUtils.normalizeUrl("lanotifica.local:19420"))
+        assertEquals(
+            "https://lanotifica.local:19420/",
+            UrlUtils.normalizeUrl("lanotifica.local:19420"),
+        )
     }
 
     @Test
@@ -42,7 +45,10 @@ class UrlUtilsTest {
 
     @Test
     fun `normalizeUrl handles full URL with port and path`() {
-        assertEquals("https://localhost:8080/api/", UrlUtils.normalizeUrl("https://localhost:8080/api"))
+        assertEquals(
+            "https://localhost:8080/api/",
+            UrlUtils.normalizeUrl("https://localhost:8080/api"),
+        )
     }
 
     @Test

@@ -7,14 +7,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Testable version of MainScreenViewModel that accepts fake dependencies.
- * Uses StateFlow directly for simpler testing (no stateIn delays).
+ * Testable version of MainScreenViewModel that accepts fake dependencies. Uses StateFlow directly
+ * for simpler testing (no stateIn delays).
  */
 class TestableMainScreenViewModel(
     isConfiguredFlow: StateFlow<Boolean>,
     serviceEnabledFlow: StateFlow<Boolean>,
     connectionStateFlow: StateFlow<HealthMonitor.ConnectionState>,
-    serverUrlFlow: StateFlow<String?>
+    serverUrlFlow: StateFlow<String?>,
 ) : ViewModel() {
 
     val isConfigured: StateFlow<Boolean> = isConfiguredFlow
@@ -29,7 +29,8 @@ class TestableMainScreenViewModel(
     val hasNotificationAccess: StateFlow<Boolean> = _hasNotificationAccess.asStateFlow()
 
     private val _isBatteryOptimizationDisabled = MutableStateFlow(false)
-    val isBatteryOptimizationDisabled: StateFlow<Boolean> = _isBatteryOptimizationDisabled.asStateFlow()
+    val isBatteryOptimizationDisabled: StateFlow<Boolean> =
+        _isBatteryOptimizationDisabled.asStateFlow()
 
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission: StateFlow<Boolean> = _hasCameraPermission.asStateFlow()
@@ -37,7 +38,7 @@ class TestableMainScreenViewModel(
     fun updatePermissions(
         notificationAccess: Boolean,
         batteryOptDisabled: Boolean,
-        cameraPermission: Boolean = _hasCameraPermission.value
+        cameraPermission: Boolean = _hasCameraPermission.value,
     ) {
         _hasNotificationAccess.value = notificationAccess
         _isBatteryOptimizationDisabled.value = batteryOptDisabled

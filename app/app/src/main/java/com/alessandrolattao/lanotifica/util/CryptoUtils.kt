@@ -1,13 +1,13 @@
 package com.alessandrolattao.lanotifica.util
 
 import android.annotation.SuppressLint
-import okhttp3.OkHttpClient
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import okhttp3.OkHttpClient
 
 object CryptoUtils {
     fun calculateFingerprint(cert: X509Certificate): String {
@@ -27,8 +27,8 @@ object CryptoUtils {
     }
 
     /**
-     * Creates an X509TrustManager that validates server certificates against an expected fingerprint.
-     * Used for certificate pinning.
+     * Creates an X509TrustManager that validates server certificates against an expected
+     * fingerprint. Used for certificate pinning.
      */
     @SuppressLint("CustomX509TrustManager", "TrustAllX509TrustManager")
     fun createPinningTrustManager(expectedFingerprint: String): X509TrustManager {
@@ -54,19 +54,20 @@ object CryptoUtils {
     }
 
     /**
-     * Creates an OkHttpClient configured with certificate pinning.
-     * Verifies server certificate fingerprint instead of relying on CA chain.
+     * Creates an OkHttpClient configured with certificate pinning. Verifies server certificate
+     * fingerprint instead of relying on CA chain.
      */
     fun createPinnedOkHttpClient(
         fingerprint: String,
         connectTimeoutMs: Long = 10_000,
         readTimeoutMs: Long = 10_000,
-        writeTimeoutMs: Long = 10_000
+        writeTimeoutMs: Long = 10_000,
     ): OkHttpClient {
         val trustManager = createPinningTrustManager(fingerprint)
-        val sslContext = SSLContext.getInstance("TLS").apply {
-            init(null, arrayOf<TrustManager>(trustManager), null)
-        }
+        val sslContext =
+            SSLContext.getInstance("TLS").apply {
+                init(null, arrayOf<TrustManager>(trustManager), null)
+            }
 
         return OkHttpClient.Builder()
             .sslSocketFactory(sslContext.socketFactory, trustManager)

@@ -33,63 +33,56 @@ class SettingsRepository(private val context: Context) {
     }
 
     private val encryptedPrefs: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        val masterKey =
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
 
         EncryptedSharedPreferences.create(
             context,
             ENCRYPTED_PREFS_NAME,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
     }
 
-    val authToken: Flow<String> = flow {
-        emit(encryptedPrefs.getString(KEY_AUTH_TOKEN, "") ?: "")
-    }.flowOn(Dispatchers.IO)
+    val authToken: Flow<String> =
+        flow { emit(encryptedPrefs.getString(KEY_AUTH_TOKEN, "") ?: "") }.flowOn(Dispatchers.IO)
 
-    val certFingerprint: Flow<String> = flow {
-        emit(encryptedPrefs.getString(KEY_CERT_FINGERPRINT, "") ?: "")
-    }.flowOn(Dispatchers.IO)
+    val certFingerprint: Flow<String> =
+        flow { emit(encryptedPrefs.getString(KEY_CERT_FINGERPRINT, "") ?: "") }
+            .flowOn(Dispatchers.IO)
 
-    val serviceEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[SERVICE_ENABLED] ?: false
-    }
+    val serviceEnabled: Flow<Boolean> =
+        context.dataStore.data.map { preferences -> preferences[SERVICE_ENABLED] ?: false }
 
-    val cachedServerUrl: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[CACHED_SERVER_URL] ?: ""
-    }
+    val cachedServerUrl: Flow<String> =
+        context.dataStore.data.map { preferences -> preferences[CACHED_SERVER_URL] ?: "" }
 
-    val isConfigured: Flow<Boolean> = flow {
-        val token = encryptedPrefs.getString(KEY_AUTH_TOKEN, "") ?: ""
-        val fingerprint = encryptedPrefs.getString(KEY_CERT_FINGERPRINT, "") ?: ""
-        emit(token.isNotBlank() && fingerprint.isNotBlank())
-    }.flowOn(Dispatchers.IO)
+    val isConfigured: Flow<Boolean> =
+        flow {
+                val token = encryptedPrefs.getString(KEY_AUTH_TOKEN, "") ?: ""
+                val fingerprint = encryptedPrefs.getString(KEY_CERT_FINGERPRINT, "") ?: ""
+                emit(token.isNotBlank() && fingerprint.isNotBlank())
+            }
+            .flowOn(Dispatchers.IO)
 
     suspend fun setServerConfig(token: String, fingerprint: String) {
         withContext(Dispatchers.IO) {
-            encryptedPrefs.edit()
+            encryptedPrefs
+                .edit()
                 .putString(KEY_AUTH_TOKEN, token)
                 .putString(KEY_CERT_FINGERPRINT, fingerprint)
                 .apply()
         }
         // Clear cached URL to force rediscovery
-        context.dataStore.edit { preferences ->
-            preferences.remove(CACHED_SERVER_URL)
-        }
+        context.dataStore.edit { preferences -> preferences.remove(CACHED_SERVER_URL) }
     }
 
     suspend fun setCachedServerUrl(url: String) {
-        context.dataStore.edit { preferences ->
-            preferences[CACHED_SERVER_URL] = url
-        }
+        context.dataStore.edit { preferences -> preferences[CACHED_SERVER_URL] = url }
     }
 
     suspend fun setServiceEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[SERVICE_ENABLED] = enabled
-        }
+        context.dataStore.edit { preferences -> preferences[SERVICE_ENABLED] = enabled }
     }
 }

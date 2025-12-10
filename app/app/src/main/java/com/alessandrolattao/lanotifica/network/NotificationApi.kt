@@ -10,16 +10,12 @@ data class NotificationRequest(
     val app_name: String,
     val package_name: String,
     val title: String,
-    val message: String
+    val message: String,
 )
 
-data class DismissRequest(
-    val key: String
-)
+data class DismissRequest(val key: String)
 
-data class NotificationResponse(
-    val status: String
-)
+data class NotificationResponse(val status: String)
 
 interface NotificationApi {
     @POST("/notification")

@@ -24,82 +24,76 @@ import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun QrScanner(
-    onQrCodeScanned: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun QrScanner(onQrCodeScanned: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val previewView = remember { PreviewView(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            executor.shutdown()
-        }
-    }
+    DisposableEffect(Unit) { onDispose { executor.shutdown() } }
 
-    AndroidView(
-        factory = { previewView },
-        modifier = modifier.fillMaxSize()
-    ) { view ->
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+    AndroidView(factory = { previewView }, modifier = modifier.fillMaxSize()) { view ->
+        cameraProviderFuture.addListener(
+            {
+                val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder().build().also {
-                it.surfaceProvider = view.surfaceProvider
-            }
+                val preview =
+                    Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
 
-            val options = BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .build()
+                val options =
+                    BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                        .build()
 
-            val scanner = BarcodeScanning.getClient(options)
+                val scanner = BarcodeScanning.getClient(options)
 
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
+                val imageAnalysis =
+                    ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build()
 
-            imageAnalysis.setAnalyzer(executor) { imageProxy ->
-                val mediaImage = imageProxy.image
-                if (mediaImage != null) {
-                    val image = InputImage.fromMediaImage(
-                        mediaImage,
-                        imageProxy.imageInfo.rotationDegrees
-                    )
+                imageAnalysis.setAnalyzer(executor) { imageProxy ->
+                    val mediaImage = imageProxy.image
+                    if (mediaImage != null) {
+                        val image =
+                            InputImage.fromMediaImage(
+                                mediaImage,
+                                imageProxy.imageInfo.rotationDegrees,
+                            )
 
-                    scanner.process(image)
-                        .addOnSuccessListener { barcodes ->
-                            for (barcode in barcodes) {
-                                barcode.rawValue?.let { value ->
-                                    Log.d("QrScanner", "QR Code scanned: $value")
-                                    onQrCodeScanned(value)
+                        scanner
+                            .process(image)
+                            .addOnSuccessListener { barcodes ->
+                                for (barcode in barcodes) {
+                                    barcode.rawValue?.let { value ->
+                                        Log.d("QrScanner", "QR Code scanned: $value")
+                                        onQrCodeScanned(value)
+                                    }
                                 }
                             }
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("QrScanner", "Barcode scanning failed", e)
-                        }
-                        .addOnCompleteListener {
-                            imageProxy.close()
-                        }
-                } else {
-                    imageProxy.close()
+                            .addOnFailureListener { e ->
+                                Log.e("QrScanner", "Barcode scanning failed", e)
+                            }
+                            .addOnCompleteListener { imageProxy.close() }
+                    } else {
+                        imageProxy.close()
+                    }
                 }
-            }
 
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    imageAnalysis
-                )
-            } catch (e: Exception) {
-                Log.e("QrScanner", "Camera binding failed", e)
-            }
-        }, ContextCompat.getMainExecutor(context))
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                        imageAnalysis,
+                    )
+                } catch (e: Exception) {
+                    Log.e("QrScanner", "Camera binding failed", e)
+                }
+            },
+            ContextCompat.getMainExecutor(context),
+        )
     }
 }
