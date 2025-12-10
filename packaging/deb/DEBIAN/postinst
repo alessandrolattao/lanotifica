@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+echo ""
+echo "To enable LA-notify for your user, run:"
+echo "  systemctl --user enable --now la-notify"
+echo ""
+
+exit 0

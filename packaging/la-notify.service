@@ -1,0 +1,13 @@
+[Unit]
+Description=LA-notify - Android notification forwarder
+Documentation=https://github.com/alessandrolattao/la-notify
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/la-notify
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,15 +1,14 @@
-# Binaries
-server/bin/
+# Build output
+bin/
+dist/
+
+# Go
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binary
 *.test
-
-# Output of the go coverage tool
 *.out
 
 # IDE
@@ -17,10 +16,8 @@ server/bin/
 .vscode/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Air temp files
-server/tmp/
