@@ -1,4 +1,4 @@
-.PHONY: help build test test-server test-app up lint rpm deb clean
+.PHONY: help build test test-server test-app up lint lint-server lint-app rpm deb clean
 
 SERVER_DIR = server
 APP_DIR = app
@@ -23,8 +23,13 @@ test-server: ## Run server tests
 test-app: ## Run Android app tests
 	cd $(APP_DIR) && ./gradlew test --quiet
 
-lint: ## Run linter
+lint: lint-server lint-app ## Run all linters
+
+lint-server: ## Run server linter
 	cd $(SERVER_DIR) && golangci-lint run
+
+lint-app: ## Run Android app linter
+	cd $(APP_DIR) && ./gradlew lint
 
 up: ## Start dev server with hot reload
 	cd $(SERVER_DIR) && air
