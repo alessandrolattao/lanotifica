@@ -69,10 +69,7 @@ class NotificationForwarderService : NotificationListenerService() {
         if (sbn.packageName == packageName) return
 
         // Skip ongoing notifications (media players, etc.)
-        if (sbn.isOngoing) {
-            Log.d(TAG, "Skipping ongoing notification from ${sbn.packageName}")
-            return
-        }
+        if (sbn.isOngoing) return
 
         serviceScope.launch {
             try {
