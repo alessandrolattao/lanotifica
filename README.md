@@ -71,7 +71,7 @@ curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/rel
 curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
 ```
 
-**Start the server:**
+**Start the server (Fedora/Ubuntu):**
 ```bash
 systemctl --user enable --now lanotifica
 ```
