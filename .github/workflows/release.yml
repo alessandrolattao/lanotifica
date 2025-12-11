@@ -165,12 +165,6 @@ jobs:
           name: android-aab
           path: app/app/build/outputs/bundle/release/*.aab
 
-      - name: Upload debug symbols artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-debug-symbols
-          path: app/app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -229,12 +223,6 @@ jobs:
           name: android-aab
           path: artifacts
 
-      - name: Download debug symbols
-        uses: actions/download-artifact@v4
-        with:
-          name: android-debug-symbols
-          path: artifacts
-
       - name: Determine track
         id: track
         run: |
@@ -250,6 +238,5 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
           packageName: com.alessandrolattao.lanotifica
           releaseFiles: artifacts/*.aab
-          debugSymbols: artifacts/native-debug-symbols.zip
           track: ${{ steps.track.outputs.TRACK }}
           status: completed
