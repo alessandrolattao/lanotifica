@@ -62,12 +62,12 @@
 
 **Fedora / RHEL:**
 ```bash
-curl -sL $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://.*\.rpm') | sudo dnf install -y /dev/stdin
+curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.rpm') && sudo dnf install -y lanotifica*.rpm && rm lanotifica*.rpm
 ```
 
 **Ubuntu / Debian:**
 ```bash
-curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://.*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
+curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
 ```
 
 Then open `https://localhost:19420` and scan the QR code.
