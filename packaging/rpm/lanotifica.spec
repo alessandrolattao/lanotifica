@@ -20,7 +20,6 @@ them on Linux desktop via D-Bus notifications.
 %install
 install -Dm755 bin/%{name} %{buildroot}%{_bindir}/%{name}
 install -Dm644 packaging/%{name}.service %{buildroot}%{_userunitdir}/%{name}.service
-install -Dm644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 
 %post
 echo ""
