@@ -16,7 +16,15 @@
 
 ### Server
 
-Download and install the package for your distribution from the [releases page](https://github.com/alessandrolattao/lanotifica/releases).
+**Fedora / RHEL:**
+```
+curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.rpm') && sudo dnf install -y lanotifica*.rpm && rm lanotifica*.rpm
+```
+
+**Ubuntu / Debian:**
+```
+curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
+```
 
 After installation, start the service and open the web interface at `https://localhost:19420`.
 
@@ -38,4 +46,8 @@ Your phone notifications will now appear on your desktop.
 
 ## Autostart
 
-The server runs as a user service. To start it automatically on login, the service is enabled during installation. You can manage it with standard systemd commands.
+The server runs as a user service. To start it and enable it at login, run:
+
+```
+systemctl --user enable --now lanotifica
+```
