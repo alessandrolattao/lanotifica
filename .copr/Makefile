@@ -1,9 +1,6 @@
 srpm:
-	# Fetch tags (shallow clone may not have them)
-	git fetch --tags 2>/dev/null || true
-
-	# Get version from git tag
-	$(eval VERSION := $(shell git describe --tags --exact-match HEAD 2>/dev/null | sed 's/^v//' || echo "0.0.0"))
+	# Get version from spec file
+	$(eval VERSION := $(shell grep '^Version:' packaging/rpm/lanotifica-copr.spec | awk '{print $$2}'))
 
 	# Setup rpmbuild directories
 	mkdir -p $(outdir)
@@ -19,5 +16,4 @@ srpm:
 	rpmbuild -bs \
 	    --define "_topdir /tmp/rpmbuild" \
 	    --define "_srcrpmdir $(outdir)" \
-	    --define "version $(VERSION)" \
 	    packaging/rpm/lanotifica-copr.spec

@@ -4,7 +4,7 @@
 %define _userunitdir    %{_prefix}/lib/systemd/user
 
 Name:           lanotifica
-Version:        %{?version}%{!?version:0.0.0}
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        Android notification forwarder for Linux desktop
 
