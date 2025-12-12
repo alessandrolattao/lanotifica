@@ -1,6 +1,9 @@
 srpm:
-	# Get version from git tag (works in detached HEAD)
-	$(eval VERSION := $(shell git tag --points-at HEAD 2>/dev/null | grep '^v' | sed 's/^v//' | head -1 || git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0"))
+	# Fetch tags (shallow clone may not have them)
+	git fetch --tags 2>/dev/null || true
+
+	# Get version from git tag
+	$(eval VERSION := $(shell git describe --tags --exact-match HEAD 2>/dev/null | sed 's/^v//' || echo "0.0.0"))
 
 	# Setup rpmbuild directories
 	mkdir -p $(outdir)
