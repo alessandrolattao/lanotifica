@@ -1,0 +1,35 @@
+---
+# Packit configuration for LaNotifica
+# https://packit.dev/docs/configuration/
+
+downstream_package_name: lanotifica
+upstream_tag_template: v{version}
+
+specfile_path: packaging/rpm/lanotifica.spec
+
+actions:
+  # Build the Go binary before creating SRPM
+  create-archive:
+    - bash -c "cd server && go build -ldflags '-s -w' -o ../bin/lanotifica ./cmd/lanotifica"
+    - bash -c "tar --transform 's,^,lanotifica-${PACKIT_PROJECT_VERSION}/,' -czf lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz bin/ packaging/ LICENSE"
+    - bash -c "echo lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz"
+
+srpm_build_deps:
+  - golang
+  - make
+
+jobs:
+  # Build on COPR when a new release is tagged
+  - job: copr_build
+    trigger: release
+    owner: alessandrolattao
+    project: lanotifica
+    targets:
+      - fedora-41-x86_64
+      - fedora-42-x86_64
+      - fedora-43-x86_64
+      - fedora-rawhide-x86_64
+      - epel-8-x86_64
+      - epel-9-x86_64
+      - epel-10-x86_64
+    enable_net: true

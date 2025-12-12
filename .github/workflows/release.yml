@@ -208,39 +208,11 @@ jobs:
           generate_release_notes: true
 
   # ============================================
-  # COPR DEPLOY (Fedora/EPEL)
+  # COPR DEPLOY (Fedora/EPEL) - Handled by Packit
   # ============================================
-
-  deploy-copr:
-    name: Deploy to COPR
-    needs: test-server
-    runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
-    steps:
-      - name: Install copr-cli
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install copr-cli
-
-      - name: Configure COPR
-        run: |
-          mkdir -p ~/.config
-          cat > ~/.config/copr << EOF
-          [copr-cli]
-          login = ${{ secrets.COPR_LOGIN }}
-          username = alessandrolattao
-          token = ${{ secrets.COPR_TOKEN }}
-          copr_url = https://copr.fedorainfracloud.org
-          EOF
-
-      - name: Trigger COPR build
-        run: |
-          copr-cli buildscm lanotifica \
-            --clone-url https://github.com/alessandrolattao/lanotifica.git \
-            --commit ${{ github.ref_name }} \
-            --method make_srpm \
-            --nowait
+  # Packit automatically builds on COPR when a release is tagged.
+  # See .packit.yaml for configuration.
+  # No GitHub Actions job needed.
 
   # ============================================
   # PLAY STORE DEPLOY
