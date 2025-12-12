@@ -61,9 +61,10 @@
 
 ### Server (Linux)
 
-**Fedora / RHEL:**
+**Fedora / RHEL 10 / CentOS Stream 10:**
 ```bash
-curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.rpm') && sudo dnf install -y lanotifica*.rpm && rm lanotifica*.rpm
+sudo dnf copr enable alessandrolattao/lanotifica
+sudo dnf install lanotifica
 ```
 
 **Ubuntu / Debian:**
@@ -71,7 +72,7 @@ curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/rel
 curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
 ```
 
-**Start the server (Fedora/Ubuntu):**
+**Start the server:**
 ```bash
 systemctl --user enable --now lanotifica
 ```
