@@ -84,17 +84,6 @@ class HealthMonitor private constructor(private val context: Context) {
         _serverUrl.value = null
     }
 
-    /**
-     * Destroys the HealthMonitor instance and releases all resources. Should be called when the app
-     * is terminated.
-     */
-    fun destroy() {
-        Log.d(TAG, "Destroying HealthMonitor")
-        stopMonitoring()
-        scope.coroutineContext[Job]?.cancel()
-        instance = null
-    }
-
     /** Forces an immediate health check. Should be called after server configuration is updated. */
     fun forceCheck() {
         scope.launch {
