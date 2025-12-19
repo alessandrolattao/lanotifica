@@ -10,7 +10,7 @@ specfile_path: packaging/rpm/lanotifica.spec
 actions:
   # Build the Go binary before creating SRPM
   create-archive:
-    - bash -c "cd server && go build -ldflags '-s -w -X main.Version=${PACKIT_PROJECT_VERSION}' -o ../bin/lanotifica ./cmd/lanotifica"
+    - bash -c 'cd server && go build -ldflags "-s -w -X main.Version=$PACKIT_PROJECT_VERSION" -o ../bin/lanotifica ./cmd/lanotifica'
     - bash -c "tar --transform 's,^,lanotifica-${PACKIT_PROJECT_VERSION}/,' -czf lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz bin/ packaging/ LICENSE"
     - bash -c "echo lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz"
 
