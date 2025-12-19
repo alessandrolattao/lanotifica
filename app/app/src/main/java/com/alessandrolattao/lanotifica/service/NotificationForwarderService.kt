@@ -1,6 +1,7 @@
 package com.alessandrolattao.lanotifica.service
 
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,6 +10,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.alessandrolattao.lanotifica.LaNotificaApp
 import com.alessandrolattao.lanotifica.MainActivity
 import com.alessandrolattao.lanotifica.R
@@ -71,6 +73,9 @@ class NotificationForwarderService : NotificationListenerService() {
         // Skip ongoing notifications (media players, etc.)
         if (sbn.isOngoing) return
 
+        // Skip notifications that can't be dismissed by user (system noise like Now Playing)
+        if (sbn.notification.flags and Notification.FLAG_NO_CLEAR != 0) return
+
         serviceScope.launch {
             try {
                 val enabled = settingsRepository.serviceEnabled.first()
@@ -111,7 +116,30 @@ class NotificationForwarderService : NotificationListenerService() {
 
                 val appName = getAppName(sbn.packageName)
 
-                Log.d(TAG, "Forwarding notification from $appName: $title - $text")
+                // Extract importance from notification channel
+                val channelId = notification.channelId
+                val importance = if (channelId != null) {
+                    NotificationManagerCompat.from(this@NotificationForwarderService)
+                        .getNotificationChannelCompat(channelId)?.importance
+                        ?: NotificationManager.IMPORTANCE_DEFAULT
+                } else {
+                    NotificationManager.IMPORTANCE_DEFAULT
+                }
+
+                // Map Android importance (1-5) to D-Bus urgency (0-2)
+                val urgency = when (importance) {
+                    NotificationManager.IMPORTANCE_MIN,
+                    NotificationManager.IMPORTANCE_LOW -> 0 // Low
+                    NotificationManager.IMPORTANCE_DEFAULT -> 1 // Normal
+                    NotificationManager.IMPORTANCE_HIGH,
+                    NotificationManager.IMPORTANCE_MAX -> 2 // Critical
+                    else -> 1 // Normal fallback
+                }
+
+                // Get timeout (0 means no timeout set, capped to Int.MAX_VALUE)
+                val timeoutMs = notification.timeoutAfter.coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
+
+                Log.d(TAG, "Forwarding notification from $appName: $title - $text (urgency=$urgency, timeout=$timeoutMs)")
 
                 val request =
                     NotificationRequest(
@@ -120,6 +148,8 @@ class NotificationForwarderService : NotificationListenerService() {
                         package_name = sbn.packageName,
                         title = title,
                         message = text,
+                        urgency = urgency,
+                        timeout_ms = if (timeoutMs > 0) timeoutMs else -1,
                     )
 
                 try {

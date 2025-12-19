@@ -11,6 +11,8 @@ data class NotificationRequest(
     val package_name: String,
     val title: String,
     val message: String,
+    val urgency: Int = 1,
+    val timeout_ms: Int = -1,
 )
 
 data class DismissRequest(val key: String)

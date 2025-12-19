@@ -16,6 +16,8 @@ type Request struct {
 	PackageName string `json:"package_name"`
 	Title       string `json:"title"`
 	Message     string `json:"message"`
+	Urgency     int    `json:"urgency"`    // 0=low, 1=normal, 2=critical
+	TimeoutMs   int32  `json:"timeout_ms"` // -1=default, 0=never, >0=milliseconds
 }
 
 // DismissRequest represents a request to dismiss a notification.
@@ -46,6 +48,20 @@ func Send(req *Request) error {
 	if iconPath := iconCache.GetIconPath(req.PackageName); iconPath != "" {
 		ntf.Hints[notify.HintImagePath] = "file://" + iconPath
 	}
+
+	// Set urgency hint (0=low, 1=normal, 2=critical)
+	if req.Urgency >= 0 && req.Urgency <= 2 {
+		ntf.Hints[notify.HintUrgency] = byte(req.Urgency)
+	}
+
+	// Set timeout (-1=default, 0=never, >0=milliseconds)
+	switch {
+	case req.TimeoutMs > 0:
+		ntf.Timeout = req.TimeoutMs
+	case req.TimeoutMs == 0:
+		ntf.Timeout = notify.ExpiresNever
+	}
+	// else: use default (ExpiresDefault = -1)
 
 	id, err := ntf.Show()
 	if err != nil {
