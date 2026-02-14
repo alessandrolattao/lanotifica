@@ -1,3 +1,8 @@
+---
+title: Getting Started with LaNotifica
+description: Install and configure LaNotifica to forward Android notifications to your Linux desktop. Supports Fedora, Ubuntu, Debian and all major desktop environments.
+---
+
 # Getting Started
 
 ## Requirements

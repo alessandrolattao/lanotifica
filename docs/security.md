@@ -1,3 +1,8 @@
+---
+title: LaNotifica Security
+description: LaNotifica security model — TLS 1.3 encryption, certificate pinning, token-based authentication, and local-only communication.
+---
+
 # Security
 
 ## Design Principles

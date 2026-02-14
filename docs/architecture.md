@@ -1,3 +1,8 @@
+---
+title: LaNotifica Architecture
+description: How LaNotifica forwards Android notifications to Linux using mDNS discovery, TLS encryption, and D-Bus desktop notifications.
+---
+
 # Architecture
 
 ## Components

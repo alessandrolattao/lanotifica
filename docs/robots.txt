@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://alessandrolattao.github.io/lanotifica/sitemap.xml

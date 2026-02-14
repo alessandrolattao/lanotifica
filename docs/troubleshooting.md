@@ -1,3 +1,8 @@
+---
+title: LaNotifica Troubleshooting
+description: Fix common issues with LaNotifica — server not starting, notifications not appearing, mDNS discovery problems, and Android app connection issues.
+---
+
 # Troubleshooting
 
 ## Server Issues

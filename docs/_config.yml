@@ -1,3 +1,30 @@
 title: LaNotifica
-description: Forward Android notifications to your Linux desktop
+description: >-
+  Forward Android notifications to your Linux desktop over your local network.
+  Encrypted, private, battery-friendly. No cloud, no accounts, no tracking.
+  Open source alternative to Pushbullet and KDE Connect notification mirroring.
+url: https://alessandrolattao.github.io
+baseurl: /lanotifica
 theme: jekyll-theme-minimal
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+author:
+  name: Alessandro Lattao
+  url: https://github.com/alessandrolattao
+
+social:
+  name: Alessandro Lattao
+  links:
+    - https://github.com/alessandrolattao
+
+google_site_verification:
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /assets/lanotifica.png
+      lang: en

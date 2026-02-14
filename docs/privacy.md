@@ -1,3 +1,8 @@
+---
+title: LaNotifica Privacy Policy
+description: LaNotifica privacy policy — no data collection, no cloud, no tracking. All notification data stays on your local network.
+---
+
 # Privacy Policy
 
 **Last updated:** December 2025
