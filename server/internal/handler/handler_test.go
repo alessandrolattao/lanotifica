@@ -24,7 +24,8 @@ func TestNotification_Success(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(
+		context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -51,7 +52,8 @@ func TestNotification_MethodNotAllowed(t *testing.T) {
 func TestNotification_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader([]byte("invalid json")))
+	body := bytes.NewReader([]byte("invalid json"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", body)
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -73,7 +75,8 @@ func TestNotification_MissingMessage(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(
+		context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -98,7 +101,8 @@ func TestNotification_WithPackageName(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(
+		context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -145,6 +149,7 @@ func TestHealth_MethodNotAllowed(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
+			t.Parallel()
 			req := httptest.NewRequestWithContext(context.Background(), method, "/health", http.NoBody)
 			rr := httptest.NewRecorder()
 
@@ -159,15 +164,18 @@ func TestHealth_MethodNotAllowed(t *testing.T) {
 
 // Home handler tests
 
-func TestHomeHandler_Success(t *testing.T) {
+func noPINHash() string      { return "" }
+func noSavePin(string) error { return nil }
+
+func TestHomeHandler_SetupPage(t *testing.T) {
 	t.Parallel()
 
-	handler := HomeHandler("test-secret", "test-fingerprint", "test")
+	h := HomeHandler("test-secret", "test-fingerprint", "test", noPINHash, noSavePin)
 
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", http.NoBody)
 	rr := httptest.NewRecorder()
 
-	handler(rr, req)
+	h(rr, req)
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", rr.Code)
@@ -177,44 +185,51 @@ func TestHomeHandler_Success(t *testing.T) {
 	if contentType != "text/html; charset=utf-8" {
 		t.Errorf("Expected Content-Type text/html, got %s", contentType)
 	}
+
+	body := rr.Body.String()
+	if !bytes.Contains([]byte(body), []byte("Set a PIN")) {
+		t.Error("Expected setup page when no PIN configured")
+	}
 }
 
-func TestHomeHandler_ContainsQRCode(t *testing.T) {
+func TestHomeHandler_LoginPage(t *testing.T) {
 	t.Parallel()
 
-	handler := HomeHandler("test-secret", "test-fingerprint", "test")
+	// bcrypt hash of "123456"
+	getPIN := func() string {
+		return "$2a$10$7EqJtq98hPqEX7fNZaFWoOhhrX7e5JJSMp4w.m0VXyUn0y9X6MiU"
+	}
+	h := HomeHandler("test-secret", "test-fingerprint", "test", getPIN, noSavePin)
 
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", http.NoBody)
 	rr := httptest.NewRecorder()
 
-	handler(rr, req)
+	h(rr, req)
 
-	body := rr.Body.String()
-
-	// Check for QR code base64 image
-	if !bytes.Contains([]byte(body), []byte("data:image/png;base64,")) {
-		t.Error("Expected response to contain base64 QR code image")
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rr.Code)
 	}
 
-	// Check for essential HTML elements
-	if !bytes.Contains([]byte(body), []byte("LaNotifica")) {
-		t.Error("Expected response to contain 'LaNotifica' title")
+	body := rr.Body.String()
+	if !bytes.Contains([]byte(body), []byte("Login")) {
+		t.Error("Expected login page when PIN set and no session")
 	}
 }
 
 func TestHomeHandler_NotFoundForOtherPaths(t *testing.T) {
 	t.Parallel()
 
-	handler := HomeHandler("test-secret", "test-fingerprint", "test")
+	h := HomeHandler("test-secret", "test-fingerprint", "test", noPINHash, noSavePin)
 
 	paths := []string{"/other", "/api", "/test"}
 
 	for _, path := range paths {
 		t.Run(path, func(t *testing.T) {
+			t.Parallel()
 			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, http.NoBody)
 			rr := httptest.NewRecorder()
 
-			handler(rr, req)
+			h(rr, req)
 
 			if rr.Code != http.StatusNotFound {
 				t.Errorf("Expected status 404 for path %s, got %d", path, rr.Code)

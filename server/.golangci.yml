@@ -22,6 +22,10 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - err113
+    - wrapcheck
+
+    # Modern Go idioms
+    - modernize
 
     # Complexity
     - cyclop
@@ -45,6 +49,7 @@ linters:
     - dupword
     - errname
     - errorlint
+    - exhaustive
     - forcetypeassert
     - goconst
     - gocritic
@@ -53,12 +58,17 @@ linters:
     - goprintffuncname
     - grouper
     - importas
+    - interfacebloat
+    - lll
     - misspell
     - nakedret
     - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
     - predeclared
     - reassign
     - revive
+    - thelper
     - unconvert
     - unparam
     - whitespace
@@ -70,6 +80,7 @@ linters:
     # Testing
     - paralleltest
     - testableexamples
+    - tparallel
 
     # Security
     - gosec
@@ -96,6 +107,23 @@ linters:
 
     nestif:
       min-complexity: 5
+
+    lll:
+      line-length: 120
+
+    interfacebloat:
+      max: 10
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    wrapcheck:
+      ignore-sigs:
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - .Wrap(
+        - .Wrapf(
 
     gocritic:
       enabled-tags:
@@ -158,8 +186,14 @@ linters:
           - err113
           - forcetypeassert
           - paralleltest
+          - wrapcheck
+          - nonamedreturns
+      - path: handler/home\.go
+        linters:
+          - lll
 
 formatters:
   enable:
     - gofmt
     - goimports
+    - gofumpt

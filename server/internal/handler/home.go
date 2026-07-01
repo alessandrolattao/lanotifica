@@ -1,18 +1,168 @@
 package handler
 
 import (
+	"crypto/rand"
 	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
+	"sync"
+	"time"
 
 	"github.com/skip2/go-qrcode"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //go:embed lanotifica.png
 var logoPNG []byte
+
+var (
+	sessions      = make(map[string]time.Time)
+	sessionsMu    sync.RWMutex
+	validPINRegex = regexp.MustCompile(`^\d{6}$`)
+)
+
+const (
+	sessionCookieName = "ln_session"
+	sessionDuration   = 30 * 24 * time.Hour
+)
+
+func newSession() string {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("Failed to generate session token: %v", err)
+		return ""
+	}
+	token := base64.URLEncoding.EncodeToString(b)
+	sessionsMu.Lock()
+	sessions[token] = time.Now().Add(sessionDuration)
+	sessionsMu.Unlock()
+	return token
+}
+
+func hasValidSession(r *http.Request) bool {
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil {
+		return false
+	}
+	sessionsMu.RLock()
+	expiry, ok := sessions[cookie.Value]
+	sessionsMu.RUnlock()
+	return ok && time.Now().Before(expiry)
+}
+
+func setSessionCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int(sessionDuration.Seconds()),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+var sharedStyle = `
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fafafa;
+        }
+        .card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 48px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+        .sub { color: #666; font-size: 14px; margin-bottom: 32px; }
+        input[type=text], input[type=password] {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 2rem;
+            letter-spacing: 0.5rem;
+            padding: 12px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 16px;
+        }
+        input:focus { border-color: #555; }
+        button {
+            width: 100%;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: #e5e5e5; }
+        .err { color: #f87171; font-size: 13px; margin-bottom: 16px; }
+    </style>`
+
+var setupTemplate = template.Must(template.New("setup").Parse(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaNotifica — Set PIN</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+` + sharedStyle + `
+</head>
+<body>
+    <div class="card">
+        <h1>Set a PIN</h1>
+        <p class="sub">Choose a 6-digit PIN to protect this page</p>
+        {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+        <form method="POST" action="/">
+            <input type="hidden" name="action" value="setup">
+            <input type="password" name="pin" maxlength="6" placeholder="------" autofocus inputmode="numeric" pattern="\d{6}">
+            <button type="submit">Set PIN</button>
+        </form>
+    </div>
+</body>
+</html>`))
+
+var loginTemplate = template.Must(template.New("login").Parse(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaNotifica — Login</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+` + sharedStyle + `
+</head>
+<body>
+    <div class="card">
+        <h1>LaNotifica</h1>
+        <p class="sub">Enter your PIN to access this page</p>
+        {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+        <form method="POST" action="/">
+            <input type="hidden" name="action" value="login">
+            <input type="password" name="pin" maxlength="6" placeholder="------" autofocus inputmode="numeric" pattern="\d{6}">
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>`))
 
 var homeTemplate = template.Must(template.New("home").Parse(`<!DOCTYPE html>
 <html lang="en">
@@ -211,11 +361,14 @@ func FaviconHandler() http.HandlerFunc {
 	}
 }
 
-// HomeHandler returns a handler that displays the home page with QR code.
-func HomeHandler(secret, certFingerprint, version string) http.HandlerFunc {
-	// QR format: token|fingerprint (URL is discovered via mDNS)
+// HomeHandler returns a handler that displays the home page with QR code,
+// protected by a 6-digit PIN set on first access.
+func HomeHandler(
+	secret, certFingerprint, version string,
+	getPINHash func() string,
+	savePin func(string) error,
+) http.HandlerFunc {
 	qrData := fmt.Sprintf("%s|%s", secret, certFingerprint)
-
 	qr, err := qrcode.Encode(qrData, qrcode.Medium, 256)
 	if err != nil {
 		log.Printf("Failed to generate QR code: %v", err)
@@ -229,7 +382,20 @@ func HomeHandler(secret, certFingerprint, version string) http.HandlerFunc {
 			return
 		}
 
+		pinHash := getPINHash()
+
+		if pinHash == "" {
+			handlePINSetup(w, r, savePin)
+			return
+		}
+
+		if !hasValidSession(r) {
+			handlePINLogin(w, r, pinHash)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store, private")
 		if err := homeTemplate.Execute(w, map[string]string{
 			"QRCode":  qrBase64,
 			"Logo":    logoBase64,
@@ -238,5 +404,100 @@ func HomeHandler(secret, certFingerprint, version string) http.HandlerFunc {
 			log.Printf("Failed to render home page: %v", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
+	}
+}
+
+func handlePINSetup(w http.ResponseWriter, r *http.Request, savePin func(string) error) {
+	if r.Method == http.MethodGet {
+		renderSetup(w, "")
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<10)
+	if err := r.ParseForm(); err != nil {
+		renderSetup(w, "Invalid request")
+		return
+	}
+
+	pin := r.FormValue("pin")
+	if !validPINRegex.MatchString(pin) {
+		renderSetup(w, "PIN must be exactly 6 digits")
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Failed to hash PIN: %v", err)
+		renderSetup(w, "Internal error, please try again")
+		return
+	}
+
+	if err := savePin(string(hash)); err != nil {
+		log.Printf("Failed to save PIN: %v", err)
+		renderSetup(w, "Failed to save PIN, please try again")
+		return
+	}
+
+	token := newSession()
+	if token == "" {
+		renderSetup(w, "Internal error, please try again")
+		return
+	}
+	setSessionCookie(w, token)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func handlePINLogin(w http.ResponseWriter, r *http.Request, pinHash string) {
+	if r.Method == http.MethodGet {
+		renderLogin(w, "")
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<10)
+	if err := r.ParseForm(); err != nil {
+		renderLogin(w, "Invalid request")
+		return
+	}
+
+	pin := r.FormValue("pin")
+	if err := bcrypt.CompareHashAndPassword([]byte(pinHash), []byte(pin)); err != nil {
+		renderLogin(w, "Wrong PIN")
+		return
+	}
+
+	token := newSession()
+	if token == "" {
+		renderLogin(w, "Internal error, please try again")
+		return
+	}
+	setSessionCookie(w, token)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func renderSetup(w http.ResponseWriter, errMsg string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store, private")
+	if err := setupTemplate.Execute(w, map[string]string{"Error": errMsg}); err != nil {
+		log.Printf("Failed to render setup page: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
+}
+
+func renderLogin(w http.ResponseWriter, errMsg string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store, private")
+	if err := loginTemplate.Execute(w, map[string]string{"Error": errMsg}); err != nil {
+		log.Printf("Failed to render login page: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
 }

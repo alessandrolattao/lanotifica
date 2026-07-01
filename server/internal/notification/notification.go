@@ -89,5 +89,8 @@ func Dismiss(key string) error {
 	}
 
 	delete(activeNotifications, key)
-	return notify.CloseNotification(id)
+	if err := notify.CloseNotification(id); err != nil {
+		return fmt.Errorf("closing notification: %w", err)
+	}
+	return nil
 }

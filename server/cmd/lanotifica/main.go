@@ -2,10 +2,11 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
+	"errors"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -42,8 +43,16 @@ func main() {
 		log.Printf("The server will still work, but you'll need to use IP address instead of lanotifica.local")
 	}
 
+	savePIN := func(hash string) error {
+		cfg.PINHash = hash
+		return config.Save(&cfg)
+	}
+	getPINHash := func() string {
+		return cfg.PINHash
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler.HomeHandler(cfg.Secret, certificate.Fingerprint, Version))
+	mux.HandleFunc("/", handler.HomeHandler(cfg.Secret, certificate.Fingerprint, Version, getPINHash, savePIN))
 	mux.HandleFunc("/favicon.png", handler.FaviconHandler())
 	mux.HandleFunc("/health", handler.Health)
 	mux.HandleFunc("/notification", handler.AuthMiddleware(cfg.Secret, handler.Notification))
@@ -61,23 +70,30 @@ func main() {
 		},
 	}
 
-	// Handle graceful shutdown
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		<-sigChan
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-		log.Println("Shutting down...")
-		if mdnsServer != nil {
-			_ = mdnsServer.Stop()
+	go func() {
+		log.Printf("LaNotifica server started on port %s", cfg.Port)
+		log.Printf("Open https://localhost%s in your browser to see the QR code", cfg.Port)
+		if err := server.ListenAndServeTLS("", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Server error: %v", err)
 		}
-		os.Exit(0)
 	}()
 
-	log.Printf("LaNotifica server started on port %s", cfg.Port)
-	log.Printf("Open https://localhost%s in your browser to see the QR code", cfg.Port)
+	<-ctx.Done()
+	stop()
 
-	if err := server.ListenAndServeTLS("", ""); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	log.Println("Shutting down...")
+	if mdnsServer != nil {
+		if err := mdnsServer.Stop(); err != nil {
+			log.Printf("mDNS stop error: %v", err)
+		}
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Server shutdown error: %v", err)
 	}
 }

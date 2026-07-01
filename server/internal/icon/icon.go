@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -18,11 +19,20 @@ var (
 	ErrPlayStoreNotFound = errors.New("app not found on Play Store")
 	// ErrNoIconFound is returned when no icon URL is found in the Play Store page.
 	ErrNoIconFound = errors.New("no icon found in Play Store page")
+	// ErrInvalidPackageName is returned when the package name fails validation.
+	ErrInvalidPackageName = errors.New("invalid package name")
 )
 
-var httpClient = &http.Client{
-	Timeout: 10 * time.Second,
-}
+var (
+	httpClient = &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	validPackageName = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$`)
+	iconURLPattern   = regexp.MustCompile(`https://play-lh\.googleusercontent\.com/[^"'\s]+`)
+)
+
+const iconURLPrefix = "https://play-lh.googleusercontent.com/"
 
 // Cache manages the icon cache directory.
 type Cache struct {
@@ -46,6 +56,10 @@ func NewCache() *Cache {
 // Returns empty string if the icon cannot be obtained.
 func (c *Cache) GetIconPath(packageName string) string {
 	if packageName == "" {
+		return ""
+	}
+
+	if !validPackageName.MatchString(packageName) {
 		return ""
 	}
 
@@ -109,13 +123,17 @@ func (c *Cache) fetchIconURLFromPlayStore(ctx context.Context, packageName strin
 		return "", fmt.Errorf("reading response body: %w", err)
 	}
 
-	re := regexp.MustCompile(`https://play-lh\.googleusercontent\.com/[^"'\s]+`)
-	matches := re.FindAllString(string(body), -1)
+	matches := iconURLPattern.FindAllString(string(body), -1)
 	if len(matches) == 0 {
 		return "", ErrNoIconFound
 	}
 
-	return matches[0], nil
+	iconURL := matches[0]
+	if !strings.HasPrefix(iconURL, iconURLPrefix) {
+		return "", ErrNoIconFound
+	}
+
+	return iconURL, nil
 }
 
 func (c *Cache) saveIconToCache(ctx context.Context, iconURL, iconPath string) error {
@@ -134,14 +152,26 @@ func (c *Cache) saveIconToCache(ctx context.Context, iconURL, iconPath string) e
 		return fmt.Errorf("creating cache dir: %w", mkdirErr)
 	}
 
-	file, err := os.Create(iconPath) //nolint:gosec // iconPath is controlled internally
+	tmp, err := os.CreateTemp(c.dir, "icon-*.png.tmp")
 	if err != nil {
-		return fmt.Errorf("creating icon file: %w", err)
+		return fmt.Errorf("creating temp file: %w", err)
 	}
-	defer func() { _ = file.Close() }()
+	tmpPath := tmp.Name()
 
-	if _, err := io.Copy(file, iconResp.Body); err != nil {
+	if _, err := io.Copy(tmp, iconResp.Body); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("saving icon to file: %w", err)
+	}
+
+	if err := tmp.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		return fmt.Errorf("closing temp file: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, iconPath); err != nil {
+		_ = os.Remove(tmpPath)
+		return fmt.Errorf("renaming temp file: %w", err)
 	}
 
 	return nil

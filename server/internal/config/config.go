@@ -17,6 +17,7 @@ const DefaultPort = ":19420"
 type Config struct {
 	Port            string `json:"port"`
 	Secret          string `json:"secret"`
+	PINHash         string `json:"pin_hash,omitempty"`
 	ReadTimeout     int    `json:"read_timeout_seconds"`
 	WriteTimeout    int    `json:"write_timeout_seconds"`
 	IdleTimeout     int    `json:"idle_timeout_seconds"`
@@ -43,8 +44,10 @@ func generateSecret() string {
 	return hex.EncodeToString(bytes)
 }
 
-var configDir string
-var configPath string
+var (
+	configDir  string
+	configPath string
+)
 
 func init() {
 	// Follow XDG Base Directory Specification.
@@ -95,6 +98,18 @@ func createDefault() error {
 		return fmt.Errorf("writing config file: %w", err)
 	}
 
+	return nil
+}
+
+// Save writes the configuration back to the config file.
+func Save(cfg *Config) error {
+	data, err := json.MarshalIndent(cfg, "", "  ") //nolint:gosec // config serialization is intentional
+	if err != nil {
+		return fmt.Errorf("marshaling config: %w", err)
+	}
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
+		return fmt.Errorf("writing config file: %w", err)
+	}
 	return nil
 }
 

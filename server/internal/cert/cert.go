@@ -107,8 +107,8 @@ func create(certPath, keyPath string) (*Certificate, error) {
 		return nil, fmt.Errorf("encoding certificate: %w", encodeErr)
 	}
 
-	// Save private key
-	keyFile, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600) //nolint:gosec // keyPath is controlled internally
+	//nolint:gosec // keyPath is controlled internally
+	keyFile, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("creating key file: %w", err)
 	}
@@ -128,9 +128,10 @@ func create(certPath, keyPath string) (*Certificate, error) {
 }
 
 func calculateFingerprint(certPath string) (string, error) {
-	certPEM, err := os.ReadFile(certPath) //nolint:gosec // certPath is controlled internally
+	//nolint:gosec // certPath is controlled internally
+	certPEM, err := os.ReadFile(certPath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("reading certificate: %w", err)
 	}
 
 	block, _ := pem.Decode(certPEM)

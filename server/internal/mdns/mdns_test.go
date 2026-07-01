@@ -20,6 +20,7 @@ func TestParsePort_Valid(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := parsePort(tc.input)
 			if err != nil {
 				t.Fatalf("parsePort(%q) returned error: %v", tc.input, err)
@@ -47,6 +48,7 @@ func TestParsePort_Invalid(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := parsePort(tc.input)
 			if err == nil {
 				t.Errorf("parsePort(%q) expected error, got nil", tc.input)

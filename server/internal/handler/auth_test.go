@@ -83,6 +83,7 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 			req.Header.Set("Authorization", tc.header)
 

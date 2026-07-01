@@ -60,14 +60,20 @@ func Start(port string) (*Server, error) {
 // Stop shuts down the mDNS server.
 func (s *Server) Stop() error {
 	if s.server != nil {
-		return s.server.Shutdown()
+		if err := s.server.Shutdown(); err != nil {
+			return fmt.Errorf("stopping mDNS server: %w", err)
+		}
 	}
 	return nil
 }
 
 func parsePort(port string) (int, error) {
 	p := strings.TrimPrefix(port, ":")
-	return strconv.Atoi(p)
+	n, err := strconv.Atoi(p)
+	if err != nil {
+		return 0, fmt.Errorf("parsing port %q: %w", p, err)
+	}
+	return n, nil
 }
 
 // advertisedIPv4 returns the local IPv4 address the kernel would use for mDNS
