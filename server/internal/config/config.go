@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 )
 
+// DefaultPort is the default port for the LaNotifica server.
+const DefaultPort = ":19420"
+
 // Config represents the application configuration.
 type Config struct {
 	Port            string `json:"port"`
@@ -23,7 +26,7 @@ type Config struct {
 // DefaultConfig returns the default configuration.
 func DefaultConfig() Config {
 	return Config{
-		Port:            ":19420",
+		Port:            DefaultPort,
 		Secret:          generateSecret(),
 		ReadTimeout:     10,
 		WriteTimeout:    10,
@@ -83,7 +86,7 @@ func createDefault() error {
 	}
 
 	cfg := DefaultConfig()
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := json.MarshalIndent(cfg, "", "  ") //nolint:gosec // config serialization is intentional
 	if err != nil {
 		return fmt.Errorf("marshaling default config: %w", err)
 	}

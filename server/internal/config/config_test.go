@@ -10,7 +10,7 @@ func TestDefaultConfig(t *testing.T) {
 
 	cfg := DefaultConfig()
 
-	if cfg.Port != ":19420" {
+	if cfg.Port != DefaultPort {
 		t.Errorf("Expected port :19420, got %s", cfg.Port)
 	}
 	if cfg.ReadTimeout != 10 {
@@ -41,7 +41,7 @@ func TestLoad_CreatesDefaultIfNotExists(t *testing.T) {
 	}
 
 	// Check default values.
-	if cfg.Port != ":19420" {
+	if cfg.Port != DefaultPort {
 		t.Errorf("Expected port :19420, got %s", cfg.Port)
 	}
 }

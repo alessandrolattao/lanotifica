@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +21,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 
 	handler := AuthMiddleware(testSecret, next)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+testSecret)
 
 	rr := httptest.NewRecorder()
@@ -45,7 +46,7 @@ func TestAuthMiddleware_MissingHeader(t *testing.T) {
 
 	handler := AuthMiddleware(testSecret, next)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 	// No Authorization header
 
 	rr := httptest.NewRecorder()
@@ -82,7 +83,7 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 			req.Header.Set("Authorization", tc.header)
 
 			rr := httptest.NewRecorder()
@@ -109,7 +110,7 @@ func TestAuthMiddleware_WrongToken(t *testing.T) {
 
 	handler := AuthMiddleware(testSecret, next)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer wrong-token")
 
 	rr := httptest.NewRecorder()
@@ -134,7 +135,7 @@ func TestAuthMiddleware_EmptyToken(t *testing.T) {
 
 	handler := AuthMiddleware(testSecret, next)
 
-	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer ")
 
 	rr := httptest.NewRecorder()

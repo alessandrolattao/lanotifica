@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +24,7 @@ func TestNotification_Success(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -37,7 +38,7 @@ func TestNotification_Success(t *testing.T) {
 func TestNotification_MethodNotAllowed(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, "/notification", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/notification", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	Notification(rr, req)
@@ -50,7 +51,7 @@ func TestNotification_MethodNotAllowed(t *testing.T) {
 func TestNotification_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodPost, "/notification", bytes.NewReader([]byte("invalid json")))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -72,7 +73,7 @@ func TestNotification_MissingMessage(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -97,7 +98,7 @@ func TestNotification_WithPackageName(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/notification", bytes.NewReader(jsonBody))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/notification", bytes.NewReader(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()
@@ -113,7 +114,7 @@ func TestNotification_WithPackageName(t *testing.T) {
 func TestHealth_Success(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/health", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	Health(rr, req)
@@ -144,7 +145,7 @@ func TestHealth_MethodNotAllowed(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
-			req := httptest.NewRequest(method, "/health", http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), method, "/health", http.NoBody)
 			rr := httptest.NewRecorder()
 
 			Health(rr, req)
@@ -163,7 +164,7 @@ func TestHomeHandler_Success(t *testing.T) {
 
 	handler := HomeHandler("test-secret", "test-fingerprint", "test")
 
-	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler(rr, req)
@@ -183,7 +184,7 @@ func TestHomeHandler_ContainsQRCode(t *testing.T) {
 
 	handler := HomeHandler("test-secret", "test-fingerprint", "test")
 
-	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler(rr, req)
@@ -210,7 +211,7 @@ func TestHomeHandler_NotFoundForOtherPaths(t *testing.T) {
 
 	for _, path := range paths {
 		t.Run(path, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, path, http.NoBody)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, http.NoBody)
 			rr := httptest.NewRecorder()
 
 			handler(rr, req)
@@ -227,7 +228,7 @@ func TestFaviconHandler(t *testing.T) {
 
 	handler := FaviconHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/favicon.png", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/favicon.png", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler(rr, req)
