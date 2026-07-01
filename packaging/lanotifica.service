@@ -2,6 +2,7 @@
 Description=LaNotifica - Android notification forwarder
 Documentation=https://github.com/alessandrolattao/lanotifica
 After=graphical-session.target
+PartOf=graphical-session.target
 
 [Service]
 Type=simple
@@ -10,4 +11,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target

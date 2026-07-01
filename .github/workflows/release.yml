@@ -102,6 +102,7 @@ jobs:
           make build VERSION=${{ steps.version.outputs.VERSION }}
           make rpm VERSION=${{ steps.version.outputs.VERSION }}
           make deb VERSION=${{ steps.version.outputs.VERSION }}
+          make tarball VERSION=${{ steps.version.outputs.VERSION }}
           cp ~/rpmbuild/RPMS/x86_64/*.rpm dist/
 
       - name: Upload server artifacts

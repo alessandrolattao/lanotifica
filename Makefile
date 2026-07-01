@@ -1,4 +1,4 @@
-.PHONY: help build test test-server test-app up lint lint-server lint-app format format-server format-app rpm deb clean
+.PHONY: help build test test-server test-app up lint lint-server lint-app format format-server format-app rpm deb tarball clean
 
 SERVER_DIR = server
 APP_DIR = app
@@ -30,7 +30,7 @@ lint-server: ## Run server linter
 	cd $(SERVER_DIR) && golangci-lint run
 
 lint-app: ## Run Android app linter
-	cd $(APP_DIR) && ./gradlew lint
+	cd $(APP_DIR) && ./gradlew lint detekt spotlessCheck
 
 format: format-server format-app ## Format all code
 
@@ -64,6 +64,13 @@ deb: build ## Build DEB package
 	cp packaging/deb/DEBIAN/postinst /tmp/lanotifica-deb/DEBIAN/
 	chmod 755 /tmp/lanotifica-deb/DEBIAN/postinst
 	dpkg-deb --root-owner-group --build /tmp/lanotifica-deb dist/lanotifica_$(DEB_VERSION)_amd64.deb
+
+tarball: build ## Build binary tarball for AUR (linux-amd64)
+	mkdir -p dist /tmp/lanotifica-tarball
+	cp bin/lanotifica /tmp/lanotifica-tarball/
+	cp packaging/lanotifica.service /tmp/lanotifica-tarball/
+	tar -czf dist/lanotifica-linux-amd64.tar.gz -C /tmp/lanotifica-tarball .
+	rm -rf /tmp/lanotifica-tarball
 
 clean: ## Remove build artifacts
 	rm -rf bin/ dist/

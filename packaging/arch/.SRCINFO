@@ -1,0 +1,18 @@
+pkgbase = lanotifica-bin
+	pkgdesc = Forward Android push notifications to your Linux desktop via D-Bus
+	pkgver = 1.2.0
+	pkgrel = 1
+	url = https://github.com/alessandrolattao/lanotifica
+	install = lanotifica.install
+	arch = x86_64
+	license = AGPL-3.0-only
+	depends = dbus
+	optdepends = libnotify: desktop notification daemon interaction
+	optdepends = dunst: lightweight notification daemon
+	optdepends = mako: notification daemon for Wayland
+	provides = lanotifica=1.2.0
+	conflicts = lanotifica
+	source = lanotifica-1.2.0-linux-amd64.tar.gz::https://github.com/alessandrolattao/lanotifica/releases/download/v1.2.0/lanotifica-linux-amd64.tar.gz
+	sha256sums = SKIP
+
+pkgname = lanotifica-bin

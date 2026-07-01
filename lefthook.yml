@@ -1,0 +1,11 @@
+pre-push:
+  parallel: true
+  jobs:
+    - name: go-lint
+      run: cd server && golangci-lint run
+    - name: go-test
+      run: cd server && go test ./...
+    - name: android-lint
+      run: cd app && JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./gradlew lint detekt spotlessCheck
+    - name: android-test
+      run: cd app && JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./gradlew test

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -84,6 +85,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
 
     var showQrScanner by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showBlacklist by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted
@@ -106,6 +108,11 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    if (showBlacklist) {
+        BlacklistScreen(onClose = { showBlacklist = false })
+        return
     }
 
     if (showQrScanner) {
@@ -147,7 +154,8 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                     Text(
-                        text = "Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName}",
+                        text =
+                            "Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -174,7 +182,6 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         serverUrl = serverUrl,
         hasNotificationAccess = hasNotificationAccess,
         isBatteryOptimizationDisabled = isBatteryOptimizationDisabled,
-        hasCameraPermission = hasCameraPermission,
         onNotificationAccessClick = { openNotificationListenerSettings(context) },
         onBatteryOptimizationClick = { requestDisableBatteryOptimization(context) },
         onServerConfigClick = {
@@ -186,6 +193,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         },
         onServiceEnabledChange = { viewModel.setServiceEnabled(it) },
         onAboutClick = { showAboutDialog = true },
+        onFilterClick = { showBlacklist = true },
     )
 }
 
@@ -199,18 +207,21 @@ fun MainScreenContent(
     serverUrl: String?,
     hasNotificationAccess: Boolean,
     isBatteryOptimizationDisabled: Boolean,
-    hasCameraPermission: Boolean,
     onNotificationAccessClick: () -> Unit,
     onBatteryOptimizationClick: () -> Unit,
     onServerConfigClick: () -> Unit,
     onServiceEnabledChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
+    onFilterClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("LaNotifica") },
                 actions = {
+                    IconButton(onClick = onFilterClick) {
+                        Icon(Icons.Default.FilterList, contentDescription = "App Filter")
+                    }
                     IconButton(onClick = onAboutClick) {
                         Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "About")
                     }
@@ -407,7 +418,8 @@ private fun SettingRow(
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint =
-                    if (isOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    if (isOk) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error,
             )
         }
     }

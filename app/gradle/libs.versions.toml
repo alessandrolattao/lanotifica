@@ -1,5 +1,6 @@
 [versions]
 activityCompose = "1.13.0"
+detekt = "1.23.8"
 agp = "9.2.0"
 cameraX = "1.4.1"
 composeBom = "2026.06.00"
@@ -55,6 +56,7 @@ tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 spotless = "com.diffplug.spotless:8.7.0"
 version-catalog-update = "nl.littlerobots.version-catalog-update:1.1.0"
 versions = "com.github.ben-manes.versions:0.54.0"

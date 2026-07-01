@@ -67,106 +67,106 @@ class NotificationForwarderService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
-
         if (sbn.packageName == packageName) return
-
-        // Skip ongoing notifications (media players, etc.)
         if (sbn.isOngoing) return
-
-        // Skip notifications that can't be dismissed by user (system noise like Now Playing)
         if (sbn.notification.flags and Notification.FLAG_NO_CLEAR != 0) return
 
         serviceScope.launch {
             try {
-                val enabled = settingsRepository.serviceEnabled.first()
-                if (!enabled) {
-                    Log.d(TAG, "Service disabled, skipping notification")
-                    return@launch
-                }
-
+                settingsRepository.addKnownApp(sbn.packageName)
+                if (!shouldForward(sbn.packageName)) return@launch
+                val serverUrl =
+                    healthMonitor.getServerUrlIfConnected()
+                        ?: run {
+                            Log.d(TAG, "Server not connected, skipping notification")
+                            return@launch
+                        }
                 val authToken = settingsRepository.authToken.first()
-                if (authToken.isBlank()) {
-                    Log.d(TAG, "Auth token not configured, skipping notification")
-                    return@launch
-                }
-
                 val certFingerprint = settingsRepository.certFingerprint.first()
-                if (certFingerprint.isBlank()) {
-                    Log.d(TAG, "Certificate fingerprint not configured, skipping notification")
-                    return@launch
-                }
-
-                // Check if server is connected via HealthMonitor
-                val serverUrl = healthMonitor.getServerUrlIfConnected()
-                if (serverUrl == null) {
-                    Log.d(TAG, "Server not connected, skipping notification")
-                    return@launch
-                }
-
-                val notification = sbn.notification
-                val extras = notification.extras
-
-                val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-                val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-
-                if (text.isBlank()) {
-                    Log.d(TAG, "Empty notification text, skipping")
-                    return@launch
-                }
-
-                val appName = getAppName(sbn.packageName)
-
-                // Extract importance from notification channel
-                val channelId = notification.channelId
-                val importance = if (channelId != null) {
-                    NotificationManagerCompat.from(this@NotificationForwarderService)
-                        .getNotificationChannelCompat(channelId)?.importance
-                        ?: NotificationManager.IMPORTANCE_DEFAULT
-                } else {
-                    NotificationManager.IMPORTANCE_DEFAULT
-                }
-
-                // Map Android importance (1-5) to D-Bus urgency (0-2)
-                val urgency = when (importance) {
-                    NotificationManager.IMPORTANCE_MIN,
-                    NotificationManager.IMPORTANCE_LOW -> 0 // Low
-                    NotificationManager.IMPORTANCE_DEFAULT -> 1 // Normal
-                    NotificationManager.IMPORTANCE_HIGH,
-                    NotificationManager.IMPORTANCE_MAX -> 2 // Critical
-                    else -> 1 // Normal fallback
-                }
-
-                // Get timeout (0 means no timeout set, capped to Int.MAX_VALUE)
-                val timeoutMs = notification.timeoutAfter.coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
-
-                Log.d(TAG, "Forwarding notification from $appName: $title - $text (urgency=$urgency, timeout=$timeoutMs)")
-
-                val request =
-                    NotificationRequest(
-                        key = sbn.key,
-                        app_name = appName,
-                        package_name = sbn.packageName,
-                        title = title,
-                        message = text,
-                        urgency = urgency,
-                        timeout_ms = if (timeoutMs > 0) timeoutMs else -1,
-                    )
-
-                try {
-                    val api = ApiClient.getApi(serverUrl, authToken, certFingerprint)
-                    val response = api.sendNotification(request)
-
-                    if (response.isSuccessful) {
-                        Log.d(TAG, "Notification forwarded successfully")
-                    } else {
-                        Log.e(TAG, "Failed to forward notification: ${response.code()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Connection error: ${e.message}")
-                }
+                sendNotification(sbn, serverUrl, authToken, certFingerprint)
             } catch (e: Exception) {
                 Log.e(TAG, "Error forwarding notification", e)
             }
+        }
+    }
+
+    private suspend fun shouldForward(packageName: String): Boolean {
+        if (!settingsRepository.serviceEnabled.first()) {
+            Log.d(TAG, "Service disabled, skipping notification")
+            return false
+        }
+        if (packageName in settingsRepository.blacklistedApps.first()) {
+            Log.d(TAG, "Blacklisted app, skipping: $packageName")
+            return false
+        }
+        if (settingsRepository.authToken.first().isBlank()) {
+            Log.d(TAG, "Auth token not configured, skipping notification")
+            return false
+        }
+        if (settingsRepository.certFingerprint.first().isBlank()) {
+            Log.d(TAG, "Certificate fingerprint not configured, skipping notification")
+            return false
+        }
+        return true
+    }
+
+    private suspend fun sendNotification(
+        sbn: StatusBarNotification,
+        serverUrl: String,
+        authToken: String,
+        certFingerprint: String,
+    ) {
+        val notification = sbn.notification
+        val extras = notification.extras
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        if (text.isBlank()) {
+            Log.d(TAG, "Empty notification text, skipping")
+            return
+        }
+        val appName = getAppName(sbn.packageName)
+        val urgency = mapUrgency(notification.channelId)
+        val timeoutMs = notification.timeoutAfter.coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
+        Log.d(TAG, "Forwarding notification from $appName: $title - $text (urgency=$urgency)")
+        val request =
+            NotificationRequest(
+                key = sbn.key,
+                app_name = appName,
+                package_name = sbn.packageName,
+                title = title,
+                message = text,
+                urgency = urgency,
+                timeout_ms = if (timeoutMs > 0) timeoutMs else -1,
+            )
+        try {
+            val api = ApiClient.getApi(serverUrl, authToken, certFingerprint)
+            val response = api.sendNotification(request)
+            if (response.isSuccessful) {
+                Log.d(TAG, "Notification forwarded successfully")
+            } else {
+                Log.e(TAG, "Failed to forward notification: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Connection error: ${e.message}")
+        }
+    }
+
+    private fun mapUrgency(channelId: String?): Int {
+        val importance =
+            if (channelId != null) {
+                NotificationManagerCompat.from(this)
+                    .getNotificationChannelCompat(channelId)
+                    ?.importance ?: NotificationManager.IMPORTANCE_DEFAULT
+            } else {
+                NotificationManager.IMPORTANCE_DEFAULT
+            }
+        return when (importance) {
+            NotificationManager.IMPORTANCE_MIN,
+            NotificationManager.IMPORTANCE_LOW -> 0
+            NotificationManager.IMPORTANCE_DEFAULT -> 1
+            NotificationManager.IMPORTANCE_HIGH,
+            NotificationManager.IMPORTANCE_MAX -> 2
+            else -> 1
         }
     }
 
@@ -213,7 +213,7 @@ class NotificationForwarderService : NotificationListenerService() {
             val pm = packageManager
             val appInfo = pm.getApplicationInfo(packageName, 0)
             pm.getApplicationLabel(appInfo).toString()
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             packageName
         }
     }

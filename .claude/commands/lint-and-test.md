@@ -27,22 +27,26 @@ Config: `server/.golangci.yml` (golangci-lint v2, strict).
 ```bash
 cd app
 
-# Lint
-./gradlew lint
+# Format (Spotless) — always run before lint
+./gradlew spotlessApply
+
+# Android Lint + Detekt + Spotless check
+./gradlew lint detekt spotlessCheck
 
 # Unit tests
 ./gradlew test
-
-# Format (Spotless)
-./gradlew spotlessApply
 ```
 
-## Before pushing: run both
+Detekt config: `app/config/detekt/detekt.yml`.
+
+## Before pushing: run everything via make
 
 ```bash
-cd server && golangci-lint run ./... && go test ./...
-cd app && ./gradlew lint test
+make lint   # golangci-lint + Android Lint + Detekt + Spotless
+make test   # go test + Android unit tests
 ```
+
+Lefthook runs this automatically on `git push` (install once with `lefthook install`).
 
 ## Common lint violations and how to fix them
 

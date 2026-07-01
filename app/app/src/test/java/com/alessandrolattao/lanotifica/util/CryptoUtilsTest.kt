@@ -164,12 +164,13 @@ class CryptoUtilsTest {
 
     @Test
     fun `createPinnedOkHttpClient respects timeout parameters`() {
-        val client = CryptoUtils.createPinnedOkHttpClient(
-            fingerprint = "test-fingerprint",
-            connectTimeoutMs = 5000,
-            readTimeoutMs = 3000,
-            writeTimeoutMs = 2000
-        )
+        val client =
+            CryptoUtils.createPinnedOkHttpClient(
+                fingerprint = "test-fingerprint",
+                connectTimeoutMs = 5000,
+                readTimeoutMs = 3000,
+                writeTimeoutMs = 2000,
+            )
 
         assertEquals(5000, client.connectTimeoutMillis)
         assertEquals(3000, client.readTimeoutMillis)

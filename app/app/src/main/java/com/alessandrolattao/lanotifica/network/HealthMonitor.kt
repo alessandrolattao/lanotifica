@@ -66,13 +66,12 @@ class HealthMonitor private constructor(private val context: Context) {
         if (monitoringJob?.isActive == true) return
 
         Log.d(TAG, "Starting health monitoring")
-        monitoringJob =
-            scope.launch {
-                while (true) {
-                    checkHealth()
-                    delay(HEALTH_CHECK_INTERVAL_MS)
-                }
+        monitoringJob = scope.launch {
+            while (true) {
+                checkHealth()
+                delay(HEALTH_CHECK_INTERVAL_MS)
             }
+        }
     }
 
     /** Stops monitoring server health. */

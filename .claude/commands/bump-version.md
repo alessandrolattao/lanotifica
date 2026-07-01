@@ -15,14 +15,23 @@ Three files must always be in sync. Touch all three in the same commit.
 | `packaging/rpm/lanotifica.spec` | Must use `%{pkg_version}` — NEVER hardcode. If it's hardcoded, fix it. |
 | `server/cmd/lanotifica/main.go` or `main` package constant | `Version` constant |
 
-## Steps
+## The fast way — use the script
+
+```bash
+./scripts/bump-version.sh X.Y.Z
+```
+
+The script bumps `build.gradle.kts` (versionCode +1, versionName), verifies the RPM spec uses `%{pkg_version}`, updates `packaging/arch/PKGBUILD`, and commits everything automatically.
+
+## Manual steps (if needed)
 
 1. Decide the new version (semver: MAJOR.MINOR.PATCH)
 2. Determine new `versionCode` = current + 1 (check `build.gradle.kts`)
 3. Edit `app/app/build.gradle.kts`: update both `versionCode` and `versionName`
 4. Verify `packaging/rpm/lanotifica.spec` uses `%{pkg_version}` (fix if not)
 5. Update `Version` in Go main package if there's a constant
-6. Commit all three files together: `chore: bump version to vX.Y.Z`
+6. Update `pkgver` in `packaging/arch/PKGBUILD`
+7. Commit all files together: `chore: bump version to vX.Y.Z`
 
 ## Common mistakes to avoid
 

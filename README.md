@@ -67,12 +67,18 @@ sudo dnf copr enable alessandrolattao/lanotifica
 sudo dnf install lanotifica
 ```
 
+**Arch Linux / Manjaro / EndeavourOS / CachyOS:**
+```bash
+yay -S lanotifica-bin
+# or: paru -S lanotifica-bin
+```
+
 **Ubuntu / Debian:**
 ```bash
 curl -sLO $(curl -s https://api.github.com/repos/alessandrolattao/lanotifica/releases/latest | grep -o 'https://[^"]*\.deb') && sudo dpkg -i lanotifica_*.deb && rm lanotifica_*.deb
 ```
 
-**Start the server (Fedora/Ubuntu):**
+**Start the server:**
 ```bash
 systemctl --user enable --now lanotifica
 ```
@@ -105,6 +111,38 @@ Or build from source in `app/`.
 - **Certificate pinning** — Fingerprint verified via QR code
 - **End-to-end encryption** — All traffic over TLS
 - **LAN only** — Never leaves your local network
+
+---
+
+## Development
+
+### Prerequisites
+
+- Go 1.26+ (for the server)
+- Android SDK with compileSdk 37 (for the app)
+- Java 17+ (for Gradle)
+- [Lefthook](https://github.com/evilmartians/lefthook) for pre-push git hooks
+
+### Setup
+
+```bash
+# Install lefthook (requires Go)
+go install github.com/evilmartians/lefthook@latest
+
+# Install git hooks
+lefthook install
+```
+
+Lefthook runs `golangci-lint`, `detekt`, `spotless`, and all tests automatically before every `git push`.
+
+### Build and test
+
+```bash
+make build        # build Go server binary
+make test         # run all tests (server + app)
+make lint         # run all linters (server + app + detekt + spotless)
+make format       # auto-format all code
+```
 
 ---
 

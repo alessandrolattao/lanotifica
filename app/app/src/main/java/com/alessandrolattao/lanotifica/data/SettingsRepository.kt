@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.RegistryConfiguration
@@ -16,6 +17,7 @@ import com.google.crypto.tink.aead.AesGcmKeyManager
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import java.security.KeyStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -34,6 +36,8 @@ class SettingsRepository(private val context: Context) {
         private val CERT_FINGERPRINT = stringPreferencesKey("cert_fingerprint")
         private val SERVICE_ENABLED = booleanPreferencesKey("service_enabled")
         private val CACHED_SERVER_URL = stringPreferencesKey("cached_server_url")
+        private val KNOWN_APPS = stringSetPreferencesKey("known_apps")
+        private val BLACKLISTED_APPS = stringSetPreferencesKey("blacklisted_apps")
     }
 
     private val aead: Aead by lazy {
@@ -71,7 +75,11 @@ class SettingsRepository(private val context: Context) {
         }
 
         try {
-            context.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+            context
+                .getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
             Log.i(TAG, "Cleared keyset preferences")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to clear keyset prefs: ${e.message}")
@@ -89,7 +97,7 @@ class SettingsRepository(private val context: Context) {
         return try {
             val decoded = Base64.decode(ciphertext, Base64.NO_WRAP)
             String(aead.decrypt(decoded, null), Charsets.UTF_8)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
@@ -127,5 +135,39 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setServiceEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[SERVICE_ENABLED] = enabled }
+    }
+
+    val knownApps: Flow<Set<String>> =
+        context.dataStore.data.map { prefs -> prefs[KNOWN_APPS] ?: emptySet() }
+
+    val blacklistedApps: Flow<Set<String>> =
+        context.dataStore.data.map { prefs -> prefs[BLACKLISTED_APPS] ?: emptySet() }
+
+    suspend fun addKnownApp(packageName: String) {
+        val current = context.dataStore.data.first()[KNOWN_APPS] ?: emptySet()
+        if (packageName in current) return
+        context.dataStore.edit { prefs ->
+            val stored = prefs[KNOWN_APPS] ?: emptySet()
+            if (packageName !in stored) {
+                prefs[KNOWN_APPS] = stored + packageName
+            }
+        }
+    }
+
+    suspend fun removeKnownApp(packageName: String) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KNOWN_APPS] ?: return@edit
+            prefs[KNOWN_APPS] = current - packageName
+            val blacklisted = prefs[BLACKLISTED_APPS] ?: return@edit
+            prefs[BLACKLISTED_APPS] = blacklisted - packageName
+        }
+    }
+
+    suspend fun setAppBlacklisted(packageName: String, blacklisted: Boolean) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[BLACKLISTED_APPS] ?: emptySet()
+            prefs[BLACKLISTED_APPS] =
+                if (blacklisted) current + packageName else current - packageName
+        }
     }
 }

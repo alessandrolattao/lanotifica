@@ -20,6 +20,12 @@ class FakeSettingsRepository {
     private val _isConfigured = MutableStateFlow(false)
     val isConfigured: Flow<Boolean> = _isConfigured
 
+    private val _knownApps = MutableStateFlow<Set<String>>(emptySet())
+    val knownApps: Flow<Set<String>> = _knownApps
+
+    private val _blacklistedApps = MutableStateFlow<Set<String>>(emptySet())
+    val blacklistedApps: Flow<Set<String>> = _blacklistedApps
+
     suspend fun setServerConfig(token: String, fingerprint: String) {
         _authToken.value = token
         _certFingerprint.value = fingerprint
@@ -32,5 +38,15 @@ class FakeSettingsRepository {
 
     suspend fun setServiceEnabled(enabled: Boolean) {
         _serviceEnabled.value = enabled
+    }
+
+    suspend fun addKnownApp(packageName: String) {
+        _knownApps.value = _knownApps.value + packageName
+    }
+
+    suspend fun setAppBlacklisted(packageName: String, blacklisted: Boolean) {
+        _blacklistedApps.value =
+            if (blacklisted) _blacklistedApps.value + packageName
+            else _blacklistedApps.value - packageName
     }
 }

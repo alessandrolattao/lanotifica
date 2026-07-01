@@ -21,15 +21,13 @@ object AppModule {
 
     val settingsRepository: SettingsRepository
         get() =
-            _settingsRepository
-                ?: throw IllegalStateException(
-                    "AppModule not initialized. Call init() in Application.onCreate()"
-                )
+            checkNotNull(_settingsRepository) {
+                "AppModule not initialized. Call init() in Application.onCreate()"
+            }
 
     val healthMonitor: HealthMonitor
         get() =
-            _healthMonitor
-                ?: throw IllegalStateException(
-                    "AppModule not initialized. Call init() in Application.onCreate()"
-                )
+            checkNotNull(_healthMonitor) {
+                "AppModule not initialized. Call init() in Application.onCreate()"
+            }
 }

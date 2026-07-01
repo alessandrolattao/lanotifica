@@ -5,6 +5,17 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.versions)
     alias(libs.plugins.version.catalog.update)
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+    allRules = false
+    source.setFrom(
+        "$rootDir/app/src/main/java",
+        "$rootDir/app/src/test/java",
+    )
 }
 
 spotless {

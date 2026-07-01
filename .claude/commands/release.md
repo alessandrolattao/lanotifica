@@ -11,8 +11,8 @@ Before creating the tag:
 
 - [ ] CI is green on `main` (check GitHub Actions)
 - [ ] All three version sync points updated: `build.gradle.kts` (versionCode + versionName), RPM spec (`%{pkg_version}`), Go Version constant
-- [ ] `golangci-lint run ./...` passes locally in `server/`
-- [ ] `./gradlew lint` passes locally in `app/`
+- [ ] `make lint` passes locally (golangci-lint + Android Lint + Detekt + Spotless)
+- [ ] `make test` passes locally (Go tests + Android unit tests)
 - [ ] Version commit is on `main` and pushed
 
 ## Creating the release
@@ -57,3 +57,31 @@ git push origin vX.Y.Z
 ## COPR (Fedora packaging)
 
 Handled by Packit automatically. Config in `.packit.yaml`. If COPR fails, check the Packit dashboard — it's usually a spec file issue.
+
+## AUR (Arch Linux packaging)
+
+AUR is NOT automatic — must be published manually after each release.
+
+### First time (one-off setup)
+1. Create account on aur.archlinux.org and add SSH public key
+2. `git clone ssh://aur@aur.archlinux.org/lanotifica-bin.git`
+
+### After every release (vX.Y.Z)
+
+```bash
+# One command — handles sha256, .SRCINFO via Docker, AUR push
+./packaging/arch/publish-aur.sh X.Y.Z
+```
+
+The script (`packaging/arch/publish-aur.sh`):
+1. Downloads the tarball from GitHub and computes sha256
+2. Updates PKGBUILD (pkgver, sha256sums, provides)
+3. Regenerates `.SRCINFO` via Docker (Arch Linux image)
+4. Clones the AUR repo, commits and pushes
+
+Requires: `docker`, `curl`, SSH key on aur.archlinux.org
+
+### Notes
+- `packaging/arch/PKGBUILD` is the source of truth; AUR repo is just the publication target
+- `sha256sums=('SKIP')` in the repo is a placeholder — replace with real hash before AUR push
+- If AUR is down, publish later: the GitHub release tarball is permanent

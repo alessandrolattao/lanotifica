@@ -38,14 +38,10 @@ object CryptoUtils {
             }
 
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                if (chain.isNullOrEmpty()) {
-                    throw IllegalStateException("No certificate provided by server")
-                }
+                check(!chain.isNullOrEmpty()) { "No certificate provided by server" }
                 val serverFingerprint = calculateFingerprint(chain[0])
-                if (!fingerprintsMatch(serverFingerprint, expectedFingerprint)) {
-                    throw IllegalStateException(
-                        "Certificate fingerprint mismatch! Expected: $expectedFingerprint, Got: $serverFingerprint"
-                    )
+                check(fingerprintsMatch(serverFingerprint, expectedFingerprint)) {
+                    "Certificate fingerprint mismatch! Expected: $expectedFingerprint, Got: $serverFingerprint"
                 }
             }
 
