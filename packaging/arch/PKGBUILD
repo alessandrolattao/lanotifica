@@ -1,6 +1,6 @@
 # Maintainer: Alessandro Lattao <alessandro@lattao.com>
 pkgname=lanotifica-bin
-pkgver=1.2.4
+pkgver=1.2.5
 pkgrel=1
 pkgdesc="Forward Android push notifications to your Linux desktop via D-Bus"
 arch=('x86_64')

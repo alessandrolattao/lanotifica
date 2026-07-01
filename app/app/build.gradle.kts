@@ -23,8 +23,8 @@ android {
         applicationId = "com.alessandrolattao.lanotifica"
         minSdk = 34
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.2.4"
+        versionCode = 16
+        versionName = "1.2.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
