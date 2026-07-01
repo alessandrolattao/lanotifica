@@ -32,6 +32,7 @@ var (
 )
 
 // Send sends a desktop notification using the provided request data.
+// If a notification with the same key already exists, it is updated in place.
 func Send(req *Request) error {
 	title := req.Title
 	if title == "" {
@@ -63,12 +64,19 @@ func Send(req *Request) error {
 	}
 	// else: use default (ExpiresDefault = -1)
 
+	// Reuse existing D-Bus ID so the notification updates in place
+	// instead of spawning a new one (handles progress updates, message stacking, etc.)
+	if req.Key != "" {
+		notificationsMutex.RLock()
+		ntf.ReplacesID = activeNotifications[req.Key]
+		notificationsMutex.RUnlock()
+	}
+
 	id, err := ntf.Show()
 	if err != nil {
 		return fmt.Errorf("showing notification: %w", err)
 	}
 
-	// Store the notification ID if key is provided
 	if req.Key != "" {
 		notificationsMutex.Lock()
 		activeNotifications[req.Key] = id

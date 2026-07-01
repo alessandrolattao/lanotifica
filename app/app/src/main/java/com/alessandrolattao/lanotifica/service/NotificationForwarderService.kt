@@ -18,6 +18,7 @@ import com.alessandrolattao.lanotifica.di.AppModule
 import com.alessandrolattao.lanotifica.network.ApiClient
 import com.alessandrolattao.lanotifica.network.DismissRequest
 import com.alessandrolattao.lanotifica.network.NotificationRequest
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,9 +31,11 @@ class NotificationForwarderService : NotificationListenerService() {
     companion object {
         private const val TAG = "NotificationForwarder"
         private const val FOREGROUND_ID = 1
+        private const val PROGRESS_THROTTLE_MS = 2_000L
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val lastProgressForward = ConcurrentHashMap<String, Long>()
     private val settingsRepository by lazy { AppModule.settingsRepository }
     private val healthMonitor by lazy { AppModule.healthMonitor }
 
@@ -74,7 +77,7 @@ class NotificationForwarderService : NotificationListenerService() {
         serviceScope.launch {
             try {
                 settingsRepository.addKnownApp(sbn.packageName)
-                if (!shouldForward(sbn.packageName)) return@launch
+                if (!shouldForward(sbn.packageName, sbn.key, sbn.notification)) return@launch
                 val serverUrl =
                     healthMonitor.getServerUrlIfConnected()
                         ?: run {
@@ -90,7 +93,11 @@ class NotificationForwarderService : NotificationListenerService() {
         }
     }
 
-    private suspend fun shouldForward(packageName: String): Boolean {
+    private suspend fun shouldForward(
+        packageName: String,
+        key: String,
+        notification: Notification,
+    ): Boolean {
         if (!settingsRepository.serviceEnabled.first()) {
             Log.d(TAG, "Service disabled, skipping notification")
             return false
@@ -106,6 +113,20 @@ class NotificationForwarderService : NotificationListenerService() {
         if (settingsRepository.certFingerprint.first().isBlank()) {
             Log.d(TAG, "Certificate fingerprint not configured, skipping notification")
             return false
+        }
+        val progressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX)
+        if (progressMax > 0) {
+            val progress = notification.extras.getInt(Notification.EXTRA_PROGRESS)
+            val isComplete = progress >= progressMax
+            if (!isComplete) {
+                val now = System.currentTimeMillis()
+                val last = lastProgressForward[key] ?: 0L
+                if (now - last < PROGRESS_THROTTLE_MS) {
+                    Log.d(TAG, "Progress notification throttled: $key ($progress/$progressMax)")
+                    return false
+                }
+                lastProgressForward[key] = now
+            }
         }
         return true
     }
@@ -174,6 +195,8 @@ class NotificationForwarderService : NotificationListenerService() {
         sbn ?: return
 
         if (sbn.packageName == packageName) return
+
+        lastProgressForward.remove(sbn.key)
 
         serviceScope.launch {
             try {
