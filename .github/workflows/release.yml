@@ -246,5 +246,6 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
           packageName: com.alessandrolattao.lanotifica
           releaseFiles: artifacts/*.aab
-          track: ${{ steps.track.outputs.TRACK }}
+          tracks: ${{ steps.track.outputs.TRACK }}
           status: completed
+          changesNotSentForReview: true
