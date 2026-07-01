@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,11 @@ class MainScreenViewModel(
     val connectionState: StateFlow<HealthMonitor.ConnectionState> = healthMonitor.connectionState
 
     val serverUrl: StateFlow<String?> = healthMonitor.serverUrl
+
+    val blacklistedAppsCount: StateFlow<Int> =
+        settingsRepository.blacklistedApps
+            .map { it.size }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _hasNotificationAccess = MutableStateFlow(false)
     val hasNotificationAccess: StateFlow<Boolean> = _hasNotificationAccess.asStateFlow()

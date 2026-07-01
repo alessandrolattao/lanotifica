@@ -31,11 +31,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -82,6 +82,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
     val hasNotificationAccess by viewModel.hasNotificationAccess.collectAsState()
     val isBatteryOptimizationDisabled by viewModel.isBatteryOptimizationDisabled.collectAsState()
     val hasCameraPermission by viewModel.hasCameraPermission.collectAsState()
+    val blacklistedAppsCount by viewModel.blacklistedAppsCount.collectAsState()
 
     var showQrScanner by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -194,6 +195,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         onServiceEnabledChange = { viewModel.setServiceEnabled(it) },
         onAboutClick = { showAboutDialog = true },
         onFilterClick = { showBlacklist = true },
+        blacklistedAppsCount = blacklistedAppsCount,
     )
 }
 
@@ -213,15 +215,13 @@ fun MainScreenContent(
     onServiceEnabledChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
     onFilterClick: () -> Unit,
+    blacklistedAppsCount: Int = 0,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("LaNotifica") },
                 actions = {
-                    IconButton(onClick = onFilterClick) {
-                        Icon(Icons.Default.FilterList, contentDescription = "App Filter")
-                    }
                     IconButton(onClick = onAboutClick) {
                         Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "About")
                     }
@@ -296,6 +296,36 @@ fun MainScreenContent(
                             if (isConfigured) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.error,
                     )
+                }
+            }
+
+            // App Filters
+            Card(modifier = Modifier.fillMaxWidth(), onClick = onFilterClick) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "App Filters",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(
+                            text =
+                                if (blacklistedAppsCount == 0) "All apps forwarded"
+                                else
+                                    "$blacklistedAppsCount app${if (blacklistedAppsCount == 1) "" else "s"} blocked",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 
