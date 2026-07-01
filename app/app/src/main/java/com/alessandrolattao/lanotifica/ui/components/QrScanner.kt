@@ -42,7 +42,6 @@ fun QrScanner(onQrCodeScanned: (String) -> Unit, modifier: Modifier = Modifier) 
                     .process(image)
                     .addOnSuccessListener { barcodes ->
                         barcodes.firstOrNull()?.rawValue?.let { value ->
-                            Log.d("QrScanner", "QR Code scanned: $value")
                             onQrCodeScannedState(value)
                         }
                     }
