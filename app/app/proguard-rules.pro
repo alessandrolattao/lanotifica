@@ -1,3 +1,10 @@
+# ML Kit Barcode Scanning
+# play-services-mlkit-barcode-scanning has no bundled ProGuard consumer rules.
+# R8 removes internal implementation classes used via service locator pattern,
+# causing BarcodeScanning.getClient() to NPE at runtime in release builds.
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_** { *; }
+
 # Retrofit
 -keepattributes Signature
 -keepattributes *Annotation*
