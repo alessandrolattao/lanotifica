@@ -248,4 +248,3 @@ jobs:
           releaseFiles: artifacts/*.aab
           tracks: ${{ steps.track.outputs.TRACK }}
           status: completed
-          changesNotSentForReview: true
