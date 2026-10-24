@@ -120,7 +120,7 @@ Or build from source in `app/`.
 
 - Go 1.27.1+ (for the server)
 - Android SDK with compileSdk 37 (for the app)
-- Java 17+ (for Gradle)
+- Java 21+ (for Gradle)
 - [Lefthook](https://github.com/evilmartians/lefthook) for pre-push git hooks
 
 ### Setup
