@@ -28,7 +28,7 @@ fun QrScanner(onQrCodeScanned: (String) -> Unit, modifier: Modifier = Modifier) 
     val cameraController = remember { LifecycleCameraController(context) }
     val scanner = remember {
         BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+            BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build(),
         )
     }
 

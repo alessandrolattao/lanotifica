@@ -36,7 +36,9 @@ object ApiClient {
                     .newBuilder()
                     .addInterceptor(authInterceptor(token))
                     .addInterceptor(
-                        HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+                        HttpLoggingInterceptor().apply {
+                            level = HttpLoggingInterceptor.Level.BODY
+                        },
                     )
                     .build()
 

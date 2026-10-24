@@ -49,7 +49,7 @@ fun BlacklistScreen(onClose: () -> Unit) {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         if (apps.isEmpty()) {
             Box(

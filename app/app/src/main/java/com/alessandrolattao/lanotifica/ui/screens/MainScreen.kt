@@ -151,7 +151,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 Column {
                     Text(
                         "Forward notifications from your Android device to your Linux desktop.\n\n" +
-                            "To get started, you need to install and run the LaNotifica server on your computer."
+                            "To get started, you need to install and run the LaNotifica server on your computer.",
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                     Text(
@@ -167,7 +167,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                     onClick = {
                         showAboutDialog = false
                         openGitHub(context)
-                    }
+                    },
                 ) {
                     Text("Setup Instructions")
                 }
@@ -227,7 +227,7 @@ fun MainScreenContent(
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier =
@@ -468,7 +468,7 @@ private fun QrScannerScreen(onQrCodeScanned: (String) -> Unit, onClose: () -> Un
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             QrScanner(onQrCodeScanned = onQrCodeScanned, modifier = Modifier.fillMaxSize())

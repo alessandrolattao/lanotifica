@@ -83,7 +83,7 @@ class ServiceDiscovery(context: Context) {
                             serviceInfoCallback =
                                 object : NsdManager.ServiceInfoCallback {
                                     override fun onServiceInfoCallbackRegistrationFailed(
-                                        errorCode: Int
+                                        errorCode: Int,
                                     ) {
                                         Log.e(
                                             TAG,
@@ -108,7 +108,7 @@ class ServiceDiscovery(context: Context) {
                                             cleanup()
                                             if (hostAddress != null) {
                                                 continuation.resume(
-                                                    DiscoveredServer(hostAddress, serviceInfo.port)
+                                                    DiscoveredServer(hostAddress, serviceInfo.port),
                                                 )
                                             } else {
                                                 continuation.resume(null)
