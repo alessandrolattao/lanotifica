@@ -8,9 +8,11 @@ upstream_tag_template: v{version}
 specfile_path: packaging/rpm/lanotifica.spec
 
 actions:
-  # Build the Go binary before creating SRPM
+  # Build the Go binary before creating SRPM. The SRPM chroot is fedora-latest, whose
+  # golang may be older than go.mod: GOTOOLCHAIN=auto fetches the required toolchain
+  # from proxy.golang.org, verified against sum.golang.org (Fedora's GOSUMDB default)
   create-archive:
-    - bash -c 'cd server && go build -ldflags "-s -w -X main.Version=$PACKIT_PROJECT_VERSION" -o ../bin/lanotifica ./cmd/lanotifica'
+    - bash -c 'cd server && GOTOOLCHAIN=auto go build -ldflags "-s -w -X main.Version=$PACKIT_PROJECT_VERSION" -o ../bin/lanotifica ./cmd/lanotifica'
     - bash -c "tar --transform 's,^,lanotifica-${PACKIT_PROJECT_VERSION}/,' -czf lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz bin/ packaging/ LICENSE"
     - bash -c "echo lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz"
 
