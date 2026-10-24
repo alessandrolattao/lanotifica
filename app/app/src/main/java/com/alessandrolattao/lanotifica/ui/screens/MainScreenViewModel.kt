@@ -52,6 +52,16 @@ class MainScreenViewModel(
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission: StateFlow<Boolean> = _hasCameraPermission.asStateFlow()
 
+    private val _hasLocalNetworkPermission = MutableStateFlow(true)
+    val hasLocalNetworkPermission: StateFlow<Boolean> = _hasLocalNetworkPermission.asStateFlow()
+
+    val localNetworkRequested =
+        settingsRepository.localNetworkRequested.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            false,
+        )
+
     fun updatePermissions(
         notificationAccess: Boolean,
         batteryOptDisabled: Boolean,
@@ -66,8 +76,16 @@ class MainScreenViewModel(
         _hasCameraPermission.value = granted
     }
 
-    fun onLocalNetworkPermissionGranted() {
-        healthMonitor.forceCheck()
+    fun setLocalNetworkPermission(granted: Boolean) {
+        val newlyGranted = granted && !_hasLocalNetworkPermission.value
+        _hasLocalNetworkPermission.value = granted
+        if (newlyGranted) {
+            healthMonitor.forceCheck()
+        }
+    }
+
+    fun markLocalNetworkRequested() {
+        viewModelScope.launch { settingsRepository.setLocalNetworkRequested() }
     }
 
     fun setServiceEnabled(enabled: Boolean) {

@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -38,6 +40,8 @@ import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +55,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +65,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -92,6 +96,10 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         viewModel.isBatteryOptimizationDisabled.collectAsStateWithLifecycle()
     val hasCameraPermission by viewModel.hasCameraPermission.collectAsStateWithLifecycle()
     val blacklistedAppsCount by viewModel.blacklistedAppsCount.collectAsStateWithLifecycle()
+    val hasLocalNetworkPermission by
+        viewModel.hasLocalNetworkPermission.collectAsStateWithLifecycle()
+    val localNetworkRequested by viewModel.localNetworkRequested.collectAsStateWithLifecycle()
+    val activity = LocalActivity.current
 
     var showQrScanner by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -114,19 +122,11 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
     val localNetworkPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted
             ->
+            viewModel.setLocalNetworkPermission(isGranted)
             if (isGranted) {
                 cancelLocalNetworkNotification(context)
-                viewModel.onLocalNetworkPermissionGranted()
             }
         }
-
-    LaunchedEffect(Unit) {
-        if (LocalNetworkPermission.isMissing(context)) {
-            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
-        } else {
-            cancelLocalNetworkNotification(context)
-        }
-    }
 
     // Check permissions when app resumes (lifecycle-aware, no polling!)
     DisposableEffect(lifecycleOwner) {
@@ -136,6 +136,11 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                     notificationAccess = isNotificationServiceEnabled(context),
                     batteryOptDisabled = isBatteryOptimizationDisabled(context),
                 )
+                val localNetworkGranted = !LocalNetworkPermission.isMissing(context)
+                viewModel.setLocalNetworkPermission(localNetworkGranted)
+                if (localNetworkGranted) {
+                    cancelLocalNetworkNotification(context)
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -237,6 +242,24 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
         onAboutClick = { showAboutDialog = true },
         onFilterClick = { showBlacklist = true },
         blacklistedAppsCount = blacklistedAppsCount,
+        showLocalNetwork = Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN,
+        hasLocalNetworkPermission = hasLocalNetworkPermission,
+        onLocalNetworkClick = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                val permission = Manifest.permission.ACCESS_LOCAL_NETWORK
+                // After a permanent denial Android no longer shows the prompt
+                if (
+                    localNetworkRequested &&
+                        activity != null &&
+                        !ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+                ) {
+                    openAppSettings(context)
+                } else {
+                    viewModel.markLocalNetworkRequested()
+                    localNetworkPermissionLauncher.launch(permission)
+                }
+            }
+        },
     )
 }
 
@@ -257,6 +280,9 @@ fun MainScreenContent(
     onAboutClick: () -> Unit,
     onFilterClick: () -> Unit,
     blacklistedAppsCount: Int = 0,
+    showLocalNetwork: Boolean = false,
+    hasLocalNetworkPermission: Boolean = true,
+    onLocalNetworkClick: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -291,6 +317,19 @@ fun MainScreenContent(
                 isOk = hasNotificationAccess,
                 onClick = onNotificationAccessClick,
             )
+
+            // Local Network (Android 17+)
+            if (showLocalNetwork) {
+                SettingRow(
+                    icon =
+                        if (hasLocalNetworkPermission) Icons.Default.Wifi
+                        else Icons.Default.WifiOff,
+                    title = "Local Network",
+                    subtitle = if (hasLocalNetworkPermission) "Allowed" else "Tap to allow",
+                    isOk = hasLocalNetworkPermission,
+                    onClick = onLocalNetworkClick,
+                )
+            }
 
             // Battery Optimization
             SettingRow(
@@ -560,6 +599,15 @@ private fun hasNotificationPermission(context: Context): Boolean =
 private fun isBatteryOptimizationDisabled(context: Context): Boolean {
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
+private fun openAppSettings(context: Context) {
+    val intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+    context.startActivity(intent)
 }
 
 private fun requestDisableBatteryOptimization(context: Context) {
