@@ -13,7 +13,8 @@ actions:
   # from proxy.golang.org, verified against sum.golang.org (Fedora's GOSUMDB default)
   create-archive:
     - bash -c 'cd server && GOTOOLCHAIN=auto go build -ldflags "-s -w -X main.Version=$PACKIT_PROJECT_VERSION" -o ../bin/lanotifica ./cmd/lanotifica'
-    - bash -c "tar --transform 's,^,lanotifica-${PACKIT_PROJECT_VERSION}/,' -czf lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz bin/ packaging/ LICENSE"
+    # Double quotes inside, so bash expands the version in the archive root dir too
+    - bash -c 'tar --transform "s,^,lanotifica-${PACKIT_PROJECT_VERSION}/," -czf "lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz" bin/ packaging/ LICENSE'
     - bash -c "echo lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz"
 
 srpm_build_deps:
@@ -26,12 +27,13 @@ jobs:
     trigger: release
     owner: alessandrolattao
     project: lanotifica
+    # fedora-all follows the active Fedora releases (stable, branched, rawhide),
+    # so a new Fedora gets builds without editing this list.
+    # No EPEL 8: the binary is dynamically linked and needs glibc >= 2.34
     targets:
-      - fedora-41-x86_64
-      - fedora-42-x86_64
-      - fedora-43-x86_64
-      - fedora-44-x86_64
-      - fedora-rawhide-x86_64
+      - fedora-all
+      - epel-9-x86_64
       - epel-10-x86_64
+      - centos-stream-9-x86_64
       - centos-stream-10-x86_64
     enable_net: true
