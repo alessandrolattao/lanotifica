@@ -66,6 +66,10 @@ class MainScreenViewModel(
         _hasCameraPermission.value = granted
     }
 
+    fun onLocalNetworkPermissionGranted() {
+        healthMonitor.forceCheck()
+    }
+
     fun setServiceEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setServiceEnabled(enabled) }
     }

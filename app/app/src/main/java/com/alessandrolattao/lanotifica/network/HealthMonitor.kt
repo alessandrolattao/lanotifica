@@ -3,6 +3,7 @@ package com.alessandrolattao.lanotifica.network
 import android.content.Context
 import android.util.Log
 import com.alessandrolattao.lanotifica.util.CryptoUtils
+import com.alessandrolattao.lanotifica.util.LocalNetworkPermission
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,6 +110,13 @@ class HealthMonitor private constructor(private val context: Context) {
         }
 
         currentFingerprint = fingerprint
+
+        if (LocalNetworkPermission.isMissing(context)) {
+            Log.w(TAG, "Local network permission not granted, skipping health check")
+            _serverUrl.value = null
+            _connectionState.value = ConnectionState.DISCONNECTED
+            return
+        }
 
         // Try cached URL first
         var url =

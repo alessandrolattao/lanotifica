@@ -51,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -69,7 +71,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alessandrolattao.lanotifica.R
 import com.alessandrolattao.lanotifica.network.HealthMonitor
+import com.alessandrolattao.lanotifica.service.NotificationForwarderService
 import com.alessandrolattao.lanotifica.ui.components.QrScanner
+import com.alessandrolattao.lanotifica.util.LocalNetworkPermission
 import com.alessandrolattao.lanotifica.util.QrCodeParser
 import java.util.Locale
 
@@ -105,6 +109,24 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
     // Forwarding works without it, but the foreground service notification stays hidden
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    // Android 17 blocks discovery and the server connection until this is granted
+    val localNetworkPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted
+            ->
+            if (isGranted) {
+                cancelLocalNetworkNotification(context)
+                viewModel.onLocalNetworkPermissionGranted()
+            }
+        }
+
+    LaunchedEffect(Unit) {
+        if (LocalNetworkPermission.isMissing(context)) {
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        } else {
+            cancelLocalNetworkNotification(context)
+        }
+    }
 
     // Check permissions when app resumes (lifecycle-aware, no polling!)
     DisposableEffect(lifecycleOwner) {
@@ -525,6 +547,11 @@ private fun appVersionName(context: Context): String? =
     context.packageManager
         .getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
         .versionName
+
+private fun cancelLocalNetworkNotification(context: Context) {
+    NotificationManagerCompat.from(context)
+        .cancel(NotificationForwarderService.LOCAL_NETWORK_NOTIFICATION_ID)
+}
 
 private fun hasNotificationPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
