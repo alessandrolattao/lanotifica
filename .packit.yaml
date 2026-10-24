@@ -26,12 +26,10 @@ jobs:
     trigger: release
     owner: alessandrolattao
     project: lanotifica
+    # fedora-all follows the active Fedora releases (stable, branched, rawhide),
+    # so a new Fedora gets builds without editing this list
     targets:
-      - fedora-41-x86_64
-      - fedora-42-x86_64
-      - fedora-43-x86_64
-      - fedora-44-x86_64
-      - fedora-rawhide-x86_64
+      - fedora-all
       - epel-10-x86_64
       - centos-stream-10-x86_64
     enable_net: true
