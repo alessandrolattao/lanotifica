@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -465,6 +466,7 @@ private fun SettingRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QrScannerScreen(onQrCodeScanned: (String) -> Unit, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
     Scaffold(
         topBar = {
             TopAppBar(
