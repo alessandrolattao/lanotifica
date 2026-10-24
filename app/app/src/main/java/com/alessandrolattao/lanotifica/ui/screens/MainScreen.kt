@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -49,7 +51,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,9 +61,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alessandrolattao.lanotifica.R
 import com.alessandrolattao.lanotifica.network.HealthMonitor
@@ -75,14 +78,15 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val isConfigured by viewModel.isConfigured.collectAsState()
-    val serviceEnabled by viewModel.serviceEnabled.collectAsState()
-    val connectionState by viewModel.connectionState.collectAsState()
-    val serverUrl by viewModel.serverUrl.collectAsState()
-    val hasNotificationAccess by viewModel.hasNotificationAccess.collectAsState()
-    val isBatteryOptimizationDisabled by viewModel.isBatteryOptimizationDisabled.collectAsState()
-    val hasCameraPermission by viewModel.hasCameraPermission.collectAsState()
-    val blacklistedAppsCount by viewModel.blacklistedAppsCount.collectAsState()
+    val isConfigured by viewModel.isConfigured.collectAsStateWithLifecycle()
+    val serviceEnabled by viewModel.serviceEnabled.collectAsStateWithLifecycle()
+    val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
+    val serverUrl by viewModel.serverUrl.collectAsStateWithLifecycle()
+    val hasNotificationAccess by viewModel.hasNotificationAccess.collectAsStateWithLifecycle()
+    val isBatteryOptimizationDisabled by
+        viewModel.isBatteryOptimizationDisabled.collectAsStateWithLifecycle()
+    val hasCameraPermission by viewModel.hasCameraPermission.collectAsStateWithLifecycle()
+    val blacklistedAppsCount by viewModel.blacklistedAppsCount.collectAsStateWithLifecycle()
 
     var showQrScanner by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -96,6 +100,10 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 showQrScanner = true
             }
         }
+
+    // Forwarding works without it, but the foreground service notification stays hidden
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     // Check permissions when app resumes (lifecycle-aware, no polling!)
     DisposableEffect(lifecycleOwner) {
@@ -155,8 +163,7 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                     Text(
-                        text =
-                            "Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName}",
+                        text = "Version ${appVersionName(context)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -192,7 +199,12 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         },
-        onServiceEnabledChange = { viewModel.setServiceEnabled(it) },
+        onServiceEnabledChange = { enabled ->
+            if (enabled && !hasNotificationPermission(context)) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            viewModel.setServiceEnabled(enabled)
+        },
         onAboutClick = { showAboutDialog = true },
         onFilterClick = { showBlacklist = true },
         blacklistedAppsCount = blacklistedAppsCount,
@@ -458,6 +470,7 @@ private fun SettingRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QrScannerScreen(onQrCodeScanned: (String) -> Unit, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -500,6 +513,15 @@ private fun openNotificationListenerSettings(context: Context) {
     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
     context.startActivity(intent)
 }
+
+private fun appVersionName(context: Context): String? =
+    context.packageManager
+        .getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+        .versionName
+
+private fun hasNotificationPermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
 private fun isBatteryOptimizationDisabled(context: Context): Boolean {
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
