@@ -1,5 +1,6 @@
 package com.alessandrolattao.lanotifica.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,6 +12,7 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.alessandrolattao.lanotifica.LaNotificaApp
 import com.alessandrolattao.lanotifica.MainActivity
 import com.alessandrolattao.lanotifica.R
@@ -18,6 +20,7 @@ import com.alessandrolattao.lanotifica.di.AppModule
 import com.alessandrolattao.lanotifica.network.ApiClient
 import com.alessandrolattao.lanotifica.network.DismissRequest
 import com.alessandrolattao.lanotifica.network.NotificationRequest
+import com.alessandrolattao.lanotifica.util.LocalNetworkPermission
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +34,7 @@ class NotificationForwarderService : NotificationListenerService() {
     companion object {
         private const val TAG = "NotificationForwarder"
         private const val FOREGROUND_ID = 1
+        const val LOCAL_NETWORK_NOTIFICATION_ID = 2
         private const val PROGRESS_THROTTLE_MS = 2_000L
     }
 
@@ -52,6 +56,10 @@ class NotificationForwarderService : NotificationListenerService() {
             createForegroundNotification(),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
+        // The service cannot ask for permissions: after an update the user must open the app
+        if (LocalNetworkPermission.isMissing(this)) {
+            showLocalNetworkPermissionNotification()
+        }
         healthMonitor.startMonitoring()
     }
 
@@ -239,6 +247,31 @@ class NotificationForwarderService : NotificationListenerService() {
         } catch (_: PackageManager.NameNotFoundException) {
             packageName
         }
+    }
+
+    private fun showLocalNetworkPermissionNotification() {
+        if (
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val pendingIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        val notification =
+            NotificationCompat.Builder(this, LaNotificaApp.CHANNEL_ID)
+                .setContentTitle("LaNotifica")
+                .setContentText("Open LaNotifica to allow local network access")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+        NotificationManagerCompat.from(this).notify(LOCAL_NETWORK_NOTIFICATION_ID, notification)
     }
 
     private fun createForegroundNotification(): Notification {

@@ -38,6 +38,7 @@ class SettingsRepository(private val context: Context) {
         private val CACHED_SERVER_URL = stringPreferencesKey("cached_server_url")
         private val KNOWN_APPS = stringSetPreferencesKey("known_apps")
         private val BLACKLISTED_APPS = stringSetPreferencesKey("blacklisted_apps")
+        private val LOCAL_NETWORK_REQUESTED = booleanPreferencesKey("local_network_requested")
     }
 
     private val aead: Aead by lazy {
@@ -135,6 +136,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setServiceEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[SERVICE_ENABLED] = enabled }
+    }
+
+    /** Whether ACCESS_LOCAL_NETWORK was requested at least once, to detect a permanent denial. */
+    val localNetworkRequested: Flow<Boolean> =
+        context.dataStore.data.map { prefs -> prefs[LOCAL_NETWORK_REQUESTED] ?: false }
+
+    suspend fun setLocalNetworkRequested() {
+        context.dataStore.edit { prefs -> prefs[LOCAL_NETWORK_REQUESTED] = true }
     }
 
     val knownApps: Flow<Set<String>> =
