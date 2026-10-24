@@ -22,9 +22,9 @@ android {
     defaultConfig {
         applicationId = "com.alessandrolattao.lanotifica"
         minSdk = 34
-        targetSdk = 36
-        versionCode = 17
-        versionName = "1.2.6"
+        targetSdk = 37
+        versionCode = 18
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,8 +41,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures { compose = true }
 
@@ -86,6 +86,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.activity.compose)
 
