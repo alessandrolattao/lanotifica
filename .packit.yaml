@@ -13,7 +13,8 @@ actions:
   # from proxy.golang.org, verified against sum.golang.org (Fedora's GOSUMDB default)
   create-archive:
     - bash -c 'cd server && GOTOOLCHAIN=auto go build -ldflags "-s -w -X main.Version=$PACKIT_PROJECT_VERSION" -o ../bin/lanotifica ./cmd/lanotifica'
-    - bash -c "tar --transform 's,^,lanotifica-${PACKIT_PROJECT_VERSION}/,' -czf lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz bin/ packaging/ LICENSE"
+    # Double quotes inside, so bash expands the version in the archive root dir too
+    - bash -c 'tar --transform "s,^,lanotifica-${PACKIT_PROJECT_VERSION}/," -czf "lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz" bin/ packaging/ LICENSE'
     - bash -c "echo lanotifica-${PACKIT_PROJECT_VERSION}.tar.gz"
 
 srpm_build_deps:
