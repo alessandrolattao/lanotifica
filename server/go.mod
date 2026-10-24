@@ -1,6 +1,6 @@
 module github.com/alessandrolattao/lanotifica
 
-go 1.26.3
+go 1.27.1
 
 require (
 	github.com/TheCreeper/go-notify v0.2.0
