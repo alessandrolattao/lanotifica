@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
@@ -61,6 +62,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -98,6 +100,10 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 showQrScanner = true
             }
         }
+
+    // Forwarding works without it, but the foreground service notification stays hidden
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     // Check permissions when app resumes (lifecycle-aware, no polling!)
     DisposableEffect(lifecycleOwner) {
@@ -200,7 +206,12 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         },
-        onServiceEnabledChange = { viewModel.setServiceEnabled(it) },
+        onServiceEnabledChange = { enabled ->
+            if (enabled && !hasNotificationPermission(context)) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            viewModel.setServiceEnabled(enabled)
+        },
         onAboutClick = { showAboutDialog = true },
         onFilterClick = { showBlacklist = true },
         blacklistedAppsCount = blacklistedAppsCount,
@@ -509,6 +520,10 @@ private fun openNotificationListenerSettings(context: Context) {
     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
     context.startActivity(intent)
 }
+
+private fun hasNotificationPermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
 private fun isBatteryOptimizationDisabled(context: Context): Boolean {
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
