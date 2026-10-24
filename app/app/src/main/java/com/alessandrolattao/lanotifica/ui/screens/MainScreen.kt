@@ -68,6 +68,7 @@ import com.alessandrolattao.lanotifica.R
 import com.alessandrolattao.lanotifica.network.HealthMonitor
 import com.alessandrolattao.lanotifica.ui.components.QrScanner
 import com.alessandrolattao.lanotifica.util.QrCodeParser
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,12 +152,18 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 Column {
                     Text(
                         "Forward notifications from your Android device to your Linux desktop.\n\n" +
-                            "To get started, you need to install and run the LaNotifica server on your computer.",
+                            "To get started, install and run the LaNotifica server on your computer. " +
+                            "The website explains how.",
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                     Text(
                         text =
                             "Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "Made by Alessandro Lattao",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -166,10 +173,10 @@ fun MainScreen(viewModel: MainScreenViewModel = viewModel(factory = MainScreenVi
                 TextButton(
                     onClick = {
                         showAboutDialog = false
-                        openGitHub(context)
+                        openWebsite(context)
                     },
                 ) {
-                    Text("Setup Instructions")
+                    Text("Website")
                 }
             },
             dismissButton = { TextButton(onClick = { showAboutDialog = false }) { Text("Close") } },
@@ -515,10 +522,16 @@ private fun requestDisableBatteryOptimization(context: Context) {
     context.startActivity(intent)
 }
 
-private fun openGitHub(context: Context) {
+private fun openWebsite(context: Context) {
+    val path =
+        if (Locale.getDefault().language == "it") "/it/opensource/lanotifica.html"
+        else "/opensource/lanotifica.html"
     val intent =
         Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://github.com/alessandrolattao/lanotifica")
+            data =
+                Uri.parse(
+                    "https://alessandrolattao.com$path?utm_source=lanotifica&utm_medium=app",
+                )
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
     context.startActivity(intent)
