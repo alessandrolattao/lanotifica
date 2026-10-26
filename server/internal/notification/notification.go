@@ -25,15 +25,35 @@ type DismissRequest struct {
 	Key string `json:"key"`
 }
 
+// notifier tracks the D-Bus notifications it shows, so a request with a known key replaces its notification.
+type notifier struct {
+	active  map[string]uint32 // key → D-Bus notification ID
+	show    func(notify.Notification) (uint32, error)
+	closeID func(uint32) error
+	mu      sync.Mutex
+}
+
 var (
-	iconCache           = icon.NewCache()
-	activeNotifications = make(map[string]uint32) // key → D-Bus notification ID
-	notificationsMutex  sync.RWMutex
+	iconCache       = icon.NewCache()
+	defaultNotifier = &notifier{
+		active:  make(map[string]uint32),
+		show:    notify.Notification.Show,
+		closeID: notify.CloseNotification,
+	}
 )
 
 // Send sends a desktop notification using the provided request data.
 // If a notification with the same key already exists, it is updated in place.
 func Send(req *Request) error {
+	return defaultNotifier.send(req)
+}
+
+// Dismiss closes an active notification by its key.
+func Dismiss(key string) error {
+	return defaultNotifier.dismiss(key)
+}
+
+func (n *notifier) send(req *Request) error {
 	title := req.Title
 	if title == "" {
 		title = "Notification"
@@ -66,38 +86,38 @@ func Send(req *Request) error {
 
 	// Reuse existing D-Bus ID so the notification updates in place
 	// instead of spawning a new one (handles progress updates, message stacking, etc.)
+	// The lock spans the D-Bus call: two requests with the same key would otherwise
+	// both find no ID and show two notifications instead of replacing one
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	if req.Key != "" {
-		notificationsMutex.RLock()
-		ntf.ReplacesID = activeNotifications[req.Key]
-		notificationsMutex.RUnlock()
+		ntf.ReplacesID = n.active[req.Key]
 	}
 
-	id, err := ntf.Show()
+	id, err := n.show(ntf)
 	if err != nil {
 		return fmt.Errorf("showing notification: %w", err)
 	}
 
 	if req.Key != "" {
-		notificationsMutex.Lock()
-		activeNotifications[req.Key] = id
-		notificationsMutex.Unlock()
+		n.active[req.Key] = id
 	}
 
 	return nil
 }
 
-// Dismiss closes an active notification by its key.
-func Dismiss(key string) error {
-	notificationsMutex.Lock()
-	defer notificationsMutex.Unlock()
+func (n *notifier) dismiss(key string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	id, exists := activeNotifications[key]
+	id, exists := n.active[key]
 	if !exists {
 		return nil // Notification already dismissed or never shown
 	}
 
-	delete(activeNotifications, key)
-	if err := notify.CloseNotification(id); err != nil {
+	delete(n.active, key)
+	if err := n.closeID(id); err != nil {
 		return fmt.Errorf("closing notification: %w", err)
 	}
 	return nil
