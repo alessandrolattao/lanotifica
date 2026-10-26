@@ -81,6 +81,8 @@ class NotificationForwarderService : NotificationListenerService() {
         if (sbn.packageName == packageName) return
         if (sbn.isOngoing) return
         if (sbn.notification.flags and Notification.FLAG_NO_CLEAR != 0) return
+        // A group summary repeats its children, which are forwarded on their own
+        if (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
 
         serviceScope.launch {
             try {
